@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
 //
 
 public final class EnqueuingCallEventTarget {
-    fileprivate let origin: CallEventTarget
-    fileprivate let queue: ExecutionQueue
+    private let origin: CallEventTarget
+    private let queue: ExecutionQueue
 
     public init(origin: CallEventTarget, queue: ExecutionQueue) {
         self.origin = origin
@@ -27,6 +27,24 @@ public final class EnqueuingCallEventTarget {
 }
 
 extension EnqueuingCallEventTarget: CallEventTarget {
+    public func didMake(_ call: Call) {
+        queue.add {
+            self.origin.didMake(call)
+        }
+    }
+
+    public func didReceive(_ call: Call) {
+        queue.add {
+            self.origin.didReceive(call)
+        }
+    }
+
+    public func isConnecting(_ call: Call) {
+        queue.add {
+            self.origin.isConnecting(call)
+        }
+    }
+
     public func didDisconnect(_ call: Call) {
         queue.add {
             self.origin.didDisconnect(call)

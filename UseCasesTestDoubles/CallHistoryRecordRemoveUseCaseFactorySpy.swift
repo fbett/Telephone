@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -19,9 +19,9 @@
 import UseCases
 
 public final class CallHistoryRecordRemoveUseCaseFactorySpy {
-    public fileprivate(set) var invokedIdentifier: String?
+    public private(set) var invokedIdentifier: String?
 
-    fileprivate let remove: UseCase
+    private let remove: UseCase
 
     public init(remove: UseCase) {
         self.remove = remove

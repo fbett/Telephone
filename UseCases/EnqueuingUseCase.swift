@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
 //
 
 public final class EnqueuingUseCase {
-    fileprivate let origin: UseCase
-    fileprivate let queue: ExecutionQueue
+    private let origin: UseCase
+    private let queue: ExecutionQueue
 
     public init(origin: UseCase, queue: ExecutionQueue) {
         self.origin = origin

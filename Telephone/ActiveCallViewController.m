@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -30,6 +30,9 @@
 
 @property(nonatomic, getter=isShowingProgress) BOOL showingProgress;
 @property(nonatomic) NSTrackingArea *trackingArea;
+
+@property(nonatomic, weak) IBOutlet NSTextField *displayedNameField;
+@property(nonatomic, weak) IBOutlet NSTextField *statusField;
 
 @property(nonatomic) IBOutlet NSProgressIndicator *callProgressIndicator;
 @property(nonatomic) IBOutlet NSButton *hangUpButton;
@@ -60,8 +63,6 @@
  }
 
 - (void)awakeFromNib {
-    [[[self displayedNameField] cell] setBackgroundStyle:NSBackgroundStyleRaised];
-    [[[self statusField] cell] setBackgroundStyle:NSBackgroundStyleRaised];
     self.hangUpButton.frame = self.callProgressIndicator.frame;
 }
 
@@ -189,7 +190,7 @@
 #pragma mark AKActiveCallViewDelegate protocol
 
 - (void)activeCallView:(AKActiveCallView *)sender didReceiveText:(NSString *)aString {
-    NSCharacterSet *DTMFCharacterSet = [NSCharacterSet characterSetWithCharactersInString:@"0123456789*#abcdABCD"];
+    NSCharacterSet *DTMFCharacterSet = [NSCharacterSet characterSetWithCharactersInString:@"0123456789*#abcdrABCDR"];
     
     BOOL isDTMFValid = YES;
     for (NSUInteger i = 0; i < [aString length]; ++i) {

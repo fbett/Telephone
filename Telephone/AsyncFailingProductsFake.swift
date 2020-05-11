@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 
 final class AsyncFailingProductsFake {
     let all: [Product] = []
-    fileprivate let target: ProductsEventTarget
+    private let target: ProductsEventTarget
 
     init(target: ProductsEventTarget) {
         self.target = target

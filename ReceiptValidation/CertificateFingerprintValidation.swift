@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -19,8 +19,8 @@
 import Foundation
 
 final class CertificateFingerprintValidation: NSObject {
-    fileprivate let origin: ReceiptValidation
-    fileprivate let certificate: Data
+    private let origin: ReceiptValidation
+    private let certificate: Data
 
     init(origin: ReceiptValidation, certificate: Data) {
         self.origin = origin
@@ -29,7 +29,7 @@ final class CertificateFingerprintValidation: NSObject {
 }
 
 extension CertificateFingerprintValidation: ReceiptValidation {
-    func validateReceipt(_ receipt: Data, completion: (_ result: Result, _ expiration: Date) -> Void) {
+    func validateReceipt(_ receipt: Data, completion: @escaping (_ result: Result, _ expiration: Date) -> Void) {
         if SHA256Fingerprint(source: certificate) == SHA256Fingerprint(sha256: expected) {
             origin.validateReceipt(receipt, completion: completion)
         } else {
@@ -39,7 +39,7 @@ extension CertificateFingerprintValidation: ReceiptValidation {
 }
 
 private let expected = Data(
-    bytes: [
+    [
         0xb0, 0xb1, 0x73, 0x0e, 0xcb, 0xc7, 0xff, 0x45,
         0x05, 0x14, 0x2c, 0x49, 0xf1, 0x29, 0x5e, 0x6e,
         0xda, 0x6b, 0xca, 0xed, 0x7e, 0x2c, 0x68, 0xc5,

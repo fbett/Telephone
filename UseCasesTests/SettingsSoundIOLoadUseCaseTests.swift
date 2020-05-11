@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -23,42 +23,18 @@ import UseCasesTestDoubles
 import XCTest
 
 final class SettingsSoundIOLoadUseCaseTests: XCTestCase {
-    private var factory: SystemAudioDeviceTestFactory!
-    private var devices: SystemAudioDevices!
-    private var repository: SystemAudioDeviceRepositoryStub!
-    private var settings: SettingsFake!
-    private var output: SettingsSoundIOLoadUseCaseOutputSpy!
+    func testCallsOutputWithSystemDefaultSoundIOCreatedFromSettingsSoundIOAndAllAudioDevices() throws {
+        let factory = SystemAudioDevicesTestFactory(factory: SystemAudioDeviceTestFactory())
+        let output = SettingsSoundIOLoadUseCaseOutputSpy()
+        let sut = SettingsSoundIOLoadUseCase(factory: factory, settings: SettingsFake(), output: output)
 
-    override func setUp() {
-        super.setUp()
-        factory = SystemAudioDeviceTestFactory()
-        devices = SystemAudioDevices(devices: factory.all)
-        repository = SystemAudioDeviceRepositoryStub()
-        repository.allDevicesResult = factory.all
-        settings = SettingsFake()
-        output = SettingsSoundIOLoadUseCaseOutputSpy()
-    }
+        try sut.execute()
 
-    func testCallsOutputWithExpectedAudioDevicesAndSoundIO() {
-        let sut = SettingsSoundIOLoadUseCase(
-            repository: repository, settings: settings, output: output
+        XCTAssertTrue(
+            output.invokedSoundIO! == SystemDefaultingSoundIO(
+                SettingsSoundIO(devices: try factory.make(), settings: SettingsFake())
+            )
         )
-
-        try! sut.execute()
-
-        XCTAssertEqual(output.invokedDevices, expectedAudioDevices())
-        XCTAssertEqual(output.invokedSoundIO, expectedSoundIO())
-    }
-
-    private func expectedSoundIO() -> PresentationSoundIO {
-        return PresentationSoundIO(
-            input: AudioDevice(device: factory.firstBuiltInInput),
-            output: AudioDevice(device: factory.firstBuiltInOutput),
-            ringtoneOutput: AudioDevice(device: factory.firstBuiltInOutput)
-        )
-    }
-
-    private func expectedAudioDevices() -> AudioDevices {
-        return AudioDevices(devices: devices)
+        XCTAssertEqual(output.invokedDevices, try factory.make())
     }
 }

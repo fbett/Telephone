@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -19,20 +19,20 @@
 public final class SystemToUserAgentAudioDeviceMap {
     private let systemDevices: [SystemAudioDevice]
     private let userAgentDevices: [UserAgentAudioDevice]
-    private var IDMap: [SystemAudioDeviceID: UserAgentAudioDeviceID] = [:]
-    private let IDToUserAgentDevice: [UserAgentAudioDeviceID: UserAgentAudioDevice]
+    private var idMap: [SystemAudioDeviceID: UserAgentAudioDeviceID] = [:]
+    private let idToUserAgentDevice: [UserAgentAudioDeviceID: UserAgentAudioDevice]
     private let nameToUserAgentDevice: UserAgentAudioDeviceNameToDeviceMap
 
     public init(systemDevices: [SystemAudioDevice], userAgentDevices: [UserAgentAudioDevice]) {
         self.systemDevices = systemDevices
         self.userAgentDevices = userAgentDevices
-        IDToUserAgentDevice = makeIDToDeviceMap(from: userAgentDevices)
+        idToUserAgentDevice = makeIDToDeviceMap(from: userAgentDevices)
         nameToUserAgentDevice = UserAgentAudioDeviceNameToDeviceMap(devices: userAgentDevices)
         systemDevices.forEach(updateIDMap(with:))
     }
 
     public func userAgentDevice(for device: SystemAudioDevice) -> UserAgentAudioDevice {
-        if let deviceID = IDMap[device.identifier], let result = IDToUserAgentDevice[deviceID] {
+        if let deviceID = idMap[device.identifier], let result = idToUserAgentDevice[deviceID] {
             return result
         } else {
             return NullUserAgentAudioDevice()
@@ -48,7 +48,7 @@ public final class SystemToUserAgentAudioDeviceMap {
         if device.hasInputs {
             let userAgentDevice = nameToUserAgentDevice.inputDevice(named: device.name)
             if !userAgentDevice.isNil {
-                IDMap[device.identifier] = userAgentDevice.identifier
+                idMap[device.identifier] = userAgentDevice.identifier
             }
         }
     }
@@ -57,7 +57,7 @@ public final class SystemToUserAgentAudioDeviceMap {
         if device.hasOutputs {
             let userAgentDevice = nameToUserAgentDevice.outputDevice(named: device.name)
             if !userAgentDevice.isNil {
-                IDMap[device.identifier] = userAgentDevice.identifier
+                idMap[device.identifier] = userAgentDevice.identifier
             }
         }
     }

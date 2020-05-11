@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -16,12 +16,20 @@
 //  GNU General Public License for more details.
 //
 
-struct ArrayDifference<T> where T: Equatable {
-    let isPrepended: Bool
-    let count: Int
+enum ArrayDifference<T> where T: Equatable {
+    case prepended(count: Int)
+    case shiftedByOne
+    case other
 
     init(before: Array<T>, after: Array<T>) {
-        isPrepended = !before.isEmpty && after.reversed().starts(with: before.reversed())
-        count = after.count - before.count
+        if before.isEmpty || after.isEmpty {
+            self = .other
+        } else if after.reversed().starts(with: before.reversed()) {
+            self = .prepended(count: after.count - before.count)
+        } else if before[..<before.index(before: before.endIndex)] == after[after.index(after: after.startIndex)...] {
+            self = .shiftedByOne
+        } else {
+            self = .other
+        }
     }
 }

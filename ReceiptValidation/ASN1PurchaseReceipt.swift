@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ struct ASN1PurchaseReceipt {
     let isCancelled: Bool
 
     init(attribute: ASN1PayloadAttribute) {
-        assert(attribute.type == purchaseReceiptType)
+        precondition(attribute.type == purchaseReceiptType)
         var identifier: String?
         var expiration: Date?
         var isCancelled: Bool?

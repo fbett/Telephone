@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -16,18 +16,19 @@
 //  GNU General Public License for more details.
 //
 
+import Domain
 import UseCases
 
 public final class SettingsSoundIOLoadUseCaseOutputSpy {
-    public fileprivate(set) var invokedDevices: AudioDevices?
-    public fileprivate(set) var invokedSoundIO: PresentationSoundIO?
+    public private(set) var invokedSoundIO: SystemDefaultingSoundIO?
+    public private(set) var invokedDevices: SystemAudioDevices?
 
     public init() {}
 }
 
 extension SettingsSoundIOLoadUseCaseOutputSpy: SettingsSoundIOLoadUseCaseOutput {
-    public func update(devices: AudioDevices, soundIO: PresentationSoundIO) {
-        self.invokedDevices = devices
+    public func update(soundIO: SystemDefaultingSoundIO, devices: SystemAudioDevices) {
         self.invokedSoundIO = soundIO
+        self.invokedDevices = devices
     }
 }

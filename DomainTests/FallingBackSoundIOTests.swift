@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ final class FallingBackSoundIOTests: XCTestCase {
     func testDoesNotFallBackWhenOriginHasNonNullValues() {
         let sut = FallingBackSoundIO(
             origin: makeNonNullSoundIO(),
-            fallback: makeNullSoundIO()
+            fallback: NullSoundIO()
         )
 
         assertNonNullIO(sut)
@@ -39,7 +39,7 @@ final class FallingBackSoundIOTests: XCTestCase {
 
     func testFallsBackWhenOriginHasNullValues() {
         let sut = FallingBackSoundIO(
-            origin: makeNullSoundIO(),
+            origin: NullSoundIO(),
             fallback: makeNonNullSoundIO()
         )
 
@@ -51,14 +51,6 @@ final class FallingBackSoundIOTests: XCTestCase {
             soundIO: SimpleSystemSoundIO(
                 input: anyDevice, output: anyDevice
             )
-        )
-    }
-
-    private func makeNullSoundIO() -> SoundIO {
-        return SimpleSoundIO(
-            input: NullSystemAudioDevice(),
-            output: NullSystemAudioDevice(),
-            ringtoneOutput: NullSystemAudioDevice()
         )
     }
 

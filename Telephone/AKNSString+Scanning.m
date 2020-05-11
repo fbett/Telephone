@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -18,24 +18,10 @@
 
 #import "AKNSString+Scanning.h"
 
-
 @implementation NSString (AKStringScanningAdditions)
 
 - (BOOL)ak_hasLetters {
-    NSPredicate *containsLettersPredicate = [NSPredicate predicateWithFormat:@"SELF MATCHES '.*[a-zA-Z].*'"];
-    
-    return ([containsLettersPredicate evaluateWithObject:self]) ? YES : NO;
-}
-
-- (BOOL)ak_isIPAddress {
-    NSPredicate *IPAddressPredicate
-        = [NSPredicate predicateWithFormat:@"SELF MATCHES "
-           "'\\\\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\\\."
-           "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\\\."
-           "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\\\."
-           "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\\\b'"];
-    
-    return ([IPAddressPredicate evaluateWithObject:self]) ? YES : NO;
+    return [[NSPredicate predicateWithFormat:@"SELF MATCHES '.*[a-zA-Z].*'"] evaluateWithObject:self];
 }
 
 @end

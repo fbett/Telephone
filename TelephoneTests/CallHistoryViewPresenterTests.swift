@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -44,9 +44,8 @@ final class CallHistoryViewPresenterTests: XCTestCase {
         XCTAssertEqual(view.invokedRecords, [expected1, expected2])
     }
 
-    func testContactColorIsRedForMissedCallRecords() {
+    func testContactColorIsSystemRedForMissedCallRecords() {
         let record = CallHistoryRecord(
-            identifier: "any-identifier",
             uri: URI(user: "any-user", host: "any-host", displayName: "any-name"),
             date: Date(),
             duration: 0,
@@ -61,7 +60,7 @@ final class CallHistoryViewPresenterTests: XCTestCase {
 
         sut.update(records: [ContactCallHistoryRecord(origin: record, contact: contact)])
 
-        XCTAssertEqual(view.invokedRecords.first!.contact.color, NSColor.red)
+        XCTAssertEqual(view.invokedRecords.first!.contact.color, NSColor.systemRed)
     }
 
     func testTitleIsEmailAddressOrPhoneNumberAndTooltipIsEmptyWhenNameIsEmpty() {
@@ -110,12 +109,12 @@ private func makePresentationCallHistoryRecord(contact: MatchedContact, record: 
 private func makePresentationContact(contact: MatchedContact, color: NSColor) -> PresentationContact {
     switch contact.address {
     case let .phone(number, label):
-        return PresentationContact(title: contact.name, tooltip: number, label: label, color: color)
+        return PresentationContact(title: contact.name, tooltip: number, label: label, color: color, address: number)
     case let .email(address, label):
-        return PresentationContact(title: contact.name, tooltip: address, label: label, color: color)
+        return PresentationContact(title: contact.name, tooltip: address, label: label, color: color, address: address)
     }
 }
 
 private func contactColor(for record: CallHistoryRecord) -> NSColor {
-    return record.isMissed ? NSColor.red : NSColor.controlTextColor
+    return record.isMissed ? NSColor.systemRed : NSColor.controlTextColor
 }

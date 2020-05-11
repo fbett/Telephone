@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -17,23 +17,23 @@
 //
 
 final class StoreViewSpy {
-    fileprivate(set) var didCallShowPurchaseCheckProgress = false
+    private(set) var didCallShowPurchaseCheckProgress = false
 
-    fileprivate(set) var invokedProducts: [PresentationProduct] = []
-    fileprivate(set) var invokedProductsFetchError = ""
-    fileprivate(set) var didCallShowProductsFetchProgress = false
+    private(set) var invokedProducts: [PresentationProduct] = []
+    private(set) var invokedProductsFetchError = ""
+    private(set) var didCallShowProductsFetchProgress = false
 
-    fileprivate(set) var didCallShowPurchaseProgress = false
-    fileprivate(set) var invokedPurchaseError = ""
+    private(set) var didCallShowPurchaseProgress = false
+    private(set) var invokedPurchaseError = ""
 
-    fileprivate(set) var didCallShowPurchaseRestorationProgress = false
-    fileprivate(set) var invokedPurchaseRestorationError = ""
+    private(set) var didCallShowPurchaseRestorationProgress = false
+    private(set) var invokedPurchaseRestorationError = ""
 
-    fileprivate(set) var didCallDisablePurchaseRestoration = false
-    fileprivate(set) var didCallEnablePurchaseRestoration = false
+    private(set) var didCallDisablePurchaseRestoration = false
+    private(set) var didCallEnablePurchaseRestoration = false
 
-    fileprivate(set) var didCallShowPurchased = false
-    fileprivate(set) var didCallShowSubscriptionManagement = false
+    private(set) var didCallShowPurchased = false
+    private(set) var didCallShowSubscriptionManagement = false
 }
 
 extension StoreViewSpy: StoreView {}

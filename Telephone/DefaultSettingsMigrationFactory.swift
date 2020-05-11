@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -16,10 +16,24 @@
 //  GNU General Public License for more details.
 //
 
-final class DefaultSettingsMigrationFactory {}
+final class DefaultSettingsMigrationFactory {
+    private let settings: KeyValueSettings
+
+    init(settings: KeyValueSettings) {
+        self.settings = settings
+    }
+}
 
 extension DefaultSettingsMigrationFactory: SettingsMigrationFactory {
-    func makeAccountUUIDMigration(settings: KeyValueSettings) -> SettingsMigration {
+    func makeAccountUUIDMigration() -> SettingsMigration {
         return AccountUUIDSettingsMigration(settings: settings)
+    }
+
+    func makeIPVersionMigration() -> SettingsMigration {
+        return IPVersionSettingsMigration(settings: settings)
+    }
+
+    func makeTCPTransportMigration() -> SettingsMigration {
+        return TCPTransportSettingsMigration(settings: settings)
     }
 }

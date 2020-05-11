@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@
 
 final class PresentationProduct: NSObject {
     let identifier: String
-    let name: String
-    let price: String
+    @objc let name: String
+    @objc let price: String
 
     init(identifier: String, name: String, price: String) {
         self.identifier = identifier
@@ -35,7 +35,11 @@ extension PresentationProduct {
     }
 
     override var hash: Int {
-        return identifier.hash ^ name.hash ^ price.hash
+        var hasher = Hasher()
+        hasher.combine(identifier)
+        hasher.combine(name)
+        hasher.combine(price)
+        return hasher.finalize()
     }
 
     func isEqual(toProduct product: PresentationProduct) -> Bool {

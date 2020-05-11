@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ public final class ProductsEventTargets {
         }
     }
 
-    fileprivate var targets: [ProductsEventTarget] = []
+    private var targets: [ProductsEventTarget] = []
 
     public init() {}
 
@@ -36,7 +36,7 @@ public final class ProductsEventTargets {
     }
 
     public func remove(_ target: ProductsEventTarget) {
-        if let index = targets.index(where: { $0 === target }) {
+        if let index = targets.firstIndex(where: { $0 === target }) {
             targets.remove(at: index)
         }
     }

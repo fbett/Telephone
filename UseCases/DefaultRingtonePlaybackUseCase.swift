@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -21,8 +21,8 @@ public final class DefaultRingtonePlaybackUseCase: NSObject {
     
     public var isPlaying: Bool { return ringtone != nil }
 
-    fileprivate let factory: RingtoneFactory
-    fileprivate var ringtone: Ringtone?
+    private let factory: RingtoneFactory
+    private var ringtone: Ringtone?
 
     public init(factory: RingtoneFactory) {
         self.factory = factory

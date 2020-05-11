@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -18,14 +18,14 @@
 
 @import Foundation;
 
+@class PresentationAudioDevices, PresentationSoundIO;
+
+NS_ASSUME_NONNULL_BEGIN
+
 @protocol SoundIOPresenterOutput <NSObject>
 
-- (void)setInputDevices:(NSArray<NSString *> *)devices;
-- (void)setOutputDevices:(NSArray<NSString *> *)devices;
-- (void)setRingtoneDevices:(NSArray<NSString *> *)devices;
-
-- (void)setInputDevice:(NSString *)device;
-- (void)setOutputDevice:(NSString *)device;
-- (void)setRingtoneDevice:(NSString *)device;
+- (void)updateWithSoundIO:(PresentationSoundIO *)soundIO devices:(PresentationAudioDevices *)devices NS_SWIFT_NAME(update(soundIO:devices:));
 
 @end
+
+NS_ASSUME_NONNULL_END

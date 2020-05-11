@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -20,29 +20,54 @@ import XCTest
 
 final class ArrayDifferenceTests: XCTestCase {
     func testIsPrependedWhenAfterEndsWithBefore() {
-        let sut = ArrayDifference(before: Array(3...10), after: Array(1...10))
-
-        XCTAssertTrue(sut.isPrepended)
+        if case .prepended(count: _) = ArrayDifference(before: Array(3...10), after: Array(1...10)) {
+        } else {
+            XCTFail()
+        }
     }
 
-    func testIsNotPrependedWhenAfterDoesNotEndWithBefore() {
-        let sut = ArrayDifference(before: Array(3...5), after: Array(1...4))
-
-        XCTAssertFalse(sut.isPrepended)
-    }
-
-    func testIsNotPrependedWhenBeforeIsEmpty() {
-        let sut = ArrayDifference(before: Array(), after: Array(1...5))
-
-        XCTAssertFalse(sut.isPrepended)
-    }
-
-    func testCountIsDifferenceBetweenAfterAndBeforeCount() {
-        let before = Array(1...5)
+    func testIsPrependedAndCountIsDifferenceBetweenAfterAndBeforeCount() {
+        let before = Array(5...10)
         let after = Array(1...10)
 
-        let sut = ArrayDifference(before: before, after: after)
+        if case .prepended(count: let count) = ArrayDifference(before: before, after: after), count == after.count - before.count {
+        } else {
+            XCTFail()
+        }
+    }
 
-        XCTAssertEqual(sut.count, after.count - before.count)
+    func testIsShiftedByOneWhenAfterIsBeforePlusOneItemInTheBeginningAndMinusOneItemInTheEnd() {
+        if case .shiftedByOne = ArrayDifference(before: Array(2...10), after: Array(1...9)) {
+        } else {
+            XCTFail()
+        }
+    }
+
+    func testIsOtherWhenBeforeIsEmpty() {
+        if case .other = ArrayDifference(before: Array(), after: Array(1...5)) {
+        } else {
+            XCTFail()
+        }
+    }
+
+    func testIsOtherWhenAfterIsEmpty() {
+        if case .other = ArrayDifference(before: Array(1...10), after: Array()) {
+        } else {
+            XCTFail()
+        }
+    }
+
+    func testIsOtherWhenAfterDoesNotEndWithBefore() {
+        if case .other = ArrayDifference(before: Array(3...5), after: Array(1...4)) {
+        } else {
+            XCTFail()
+        }
+    }
+
+    func testIsOtherWhenAfterIsBeforePlusTwoItemsInTheBeginningAndTwoItemsRemovedFromTheEnd() {
+        if case .other = ArrayDifference(before: Array(2...10), after: Array(0...8)) {
+        } else {
+            XCTFail()
+        }
     }
 }

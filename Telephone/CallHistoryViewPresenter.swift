@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -20,9 +20,9 @@ import Cocoa
 import UseCases
 
 final class CallHistoryViewPresenter {
-    fileprivate let view: CallHistoryView
-    fileprivate let dateFormatter: DateFormatter
-    fileprivate let durationFormatter: DateComponentsFormatter
+    private let view: CallHistoryView
+    private let dateFormatter: DateFormatter
+    private let durationFormatter: DateComponentsFormatter
 
     init(view: CallHistoryView, dateFormatter: DateFormatter, durationFormatter: DateComponentsFormatter) {
         self.view = view
@@ -48,5 +48,5 @@ extension CallHistoryViewPresenter: ContactCallHistoryRecordGetAllUseCaseOutput 
 }
 
 private func contactColor(for record: ContactCallHistoryRecord) -> NSColor {
-    return record.origin.isMissed ? NSColor.red : NSColor.controlTextColor
+    return record.origin.isMissed ? NSColor.systemRed : NSColor.controlTextColor
 }

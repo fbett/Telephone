@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -19,11 +19,11 @@
 import UseCases
 
 public final class TimerFactorySpy {
-    public fileprivate(set) var didCallCreateRepeatingTimer = false
-    public fileprivate(set) var makeRepeatingTimerCallCount = 0
-    public fileprivate(set) var invokedInterval: Double = 0
+    public private(set) var didCallCreateRepeatingTimer = false
+    public private(set) var makeRepeatingTimerCallCount = 0
+    public private(set) var invokedInterval: Double = 0
 
-    fileprivate var timer: Timer!
+    private var timer: Timer!
 
     public init() {}
 

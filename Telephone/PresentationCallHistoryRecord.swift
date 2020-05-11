@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -21,10 +21,10 @@ import UseCases
 
 final class PresentationCallHistoryRecord: NSObject {
     let identifier: String
-    let contact: PresentationContact
-    let date: String
-    let duration: String
-    let isIncoming: Bool
+    @objc let contact: PresentationContact
+    @objc let date: String
+    @objc let duration: String
+    @objc let isIncoming: Bool
 
     init(identifier: String, contact: PresentationContact, date: String, duration: String, isIncoming: Bool) {
         self.identifier = identifier
@@ -42,7 +42,13 @@ extension PresentationCallHistoryRecord {
     }
 
     override var hash: Int {
-        return identifier.hash ^ contact.hash ^ date.hash ^ duration.hash ^ (isIncoming ? 1231 : 1237)
+        var hasher = Hasher()
+        hasher.combine(identifier)
+        hasher.combine(contact)
+        hasher.combine(date)
+        hasher.combine(duration)
+        hasher.combine(isIncoming)
+        return hasher.finalize()
     }
 
     private func isEqual(to record: PresentationCallHistoryRecord) -> Bool {
@@ -52,5 +58,21 @@ extension PresentationCallHistoryRecord {
             date == record.date &&
             duration == record.duration &&
             isIncoming == record.isIncoming
+    }
+}
+
+extension PresentationCallHistoryRecord: NSPasteboardWriting {
+    func writableTypes(for pasteboard: NSPasteboard) -> [NSPasteboard.PasteboardType] {
+        return [.string]
+    }
+
+    func pasteboardPropertyList(forType type: NSPasteboard.PasteboardType) -> Any? {
+        return contact.address
+    }
+}
+
+extension PresentationCallHistoryRecord {
+    var name: String {
+        return contact.title.isEmpty ? date : "\(contact.title), \(date)"
     }
 }

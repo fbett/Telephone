@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -16,24 +16,25 @@
 //  GNU General Public License for more details.
 //
 
+import Domain
 import UseCases
 
 final class DefaultUseCaseFactory {
-    fileprivate let repository: SystemAudioDeviceRepository
-    fileprivate let settings: KeyValueSettings
+    private let factory: SystemAudioDevicesFactory
+    private let settings: KeyValueSettings
 
-    init(repository: SystemAudioDeviceRepository, settings: KeyValueSettings) {
-        self.repository = repository
+    init(factory: SystemAudioDevicesFactory, settings: KeyValueSettings) {
+        self.factory = factory
         self.settings = settings
     }
 }
 
 extension DefaultUseCaseFactory: UseCaseFactory {
     func makeSettingsSoundIOLoadUseCase(output: SettingsSoundIOLoadUseCaseOutput) -> ThrowingUseCase {
-        return SettingsSoundIOLoadUseCase(repository: repository, settings: settings, output: output)
+        return SettingsSoundIOLoadUseCase(factory: factory, settings: settings, output: output)
     }
 
-    func makeSettingsSoundIOSaveUseCase(soundIO: PresentationSoundIO) -> UseCase {
+    func makeSettingsSoundIOSaveUseCase(soundIO: SystemDefaultingSoundIO) -> UseCase {
         return SettingsSoundIOSaveUseCase(soundIO: soundIO, settings: settings)
     }
 

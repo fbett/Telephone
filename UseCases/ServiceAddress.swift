@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -17,16 +17,63 @@
 //
 
 public final class ServiceAddress: NSObject {
-    public let host: String
-    public let port: String
+    @objc public let host: String
+    @objc public let port: String
 
-    public init(string: String) {
-        if let range = string.range(of: ":", options: .backwards) {
-            host = string.substring(to: range.lowerBound)
-            port = string.substring(from: range.upperBound)
+    @objc public var stringValue: String {
+        let h = host.isIP6Address ? "[\(host)]" : host
+        return port.isEmpty ? h : "\(h):\(port)"
+    }
+
+    public override var description: String { return stringValue }
+
+    @objc public init(host: String, port: String) {
+        self.host = trimmingSquareBrackets(host)
+        self.port = port
+    }
+
+    @objc public convenience init(host: String) {
+        self.init(host: host, port: "")
+    }
+
+    @objc(initWithString:) public convenience init(_ string: String) {
+        let address = beforeSemicolon(string)
+        if trimmingSquareBrackets(address).isIP6Address {
+            self.init(host: address)
+        } else if let range = address.range(of: ":", options: .backwards) {
+            self.init(host: String(address[..<range.lowerBound]), port: String(address[range.upperBound...]))
         } else {
-            host = string
-            port = ""
+            self.init(host: address)
         }
     }
+}
+
+extension ServiceAddress {
+    public override func isEqual(_ object: Any?) -> Bool {
+        guard let address = object as? ServiceAddress else { return false }
+        return isEqual(to: address)
+    }
+
+    public override var hash: Int {
+        var hasher = Hasher()
+        hasher.combine(host)
+        hasher.combine(port)
+        return hasher.finalize()
+    }
+
+    private func isEqual(to address: ServiceAddress) -> Bool {
+        return host == address.host && port == address.port
+    }
+}
+
+private func beforeSemicolon(_ string: String) -> String {
+    if let index = string.firstIndex(of: ";") {
+        return String(string[..<index])
+    } else {
+        return string
+    }
+}
+
+private func trimmingSquareBrackets(_ string: String) -> String {
+    return string.trimmingCharacters(in: CharacterSet(charactersIn: "[]"))
 }

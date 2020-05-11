@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -21,24 +21,21 @@ import UseCasesTestDoubles
 import XCTest
 
 final class UserAgentAudioDeviceUpdateUseCaseTests: XCTestCase {
-    private var userAgent: UserAgentSpy!
-    private var sut: UserAgentAudioDeviceUpdateUseCase!
-
-    override func setUp() {
-        super.setUp()
-        userAgent = UserAgentSpy()
-        sut = UserAgentAudioDeviceUpdateUseCase(userAgent: userAgent)
-    }
-
     func testCallsUpdateAudioDevicesOnExecute() {
+        let agent = UserAgentSpy()
+        let sut = UserAgentAudioDeviceUpdateUseCase(agent: agent)
+
         sut.execute()
 
-        XCTAssertTrue(userAgent.didCallUpdateAudioDevices)
+        XCTAssertTrue(agent.didCallUpdateAudioDevices)
     }
 
     func testCallsUpdateAudioDevicesOnSystemAudioDevicesUpdate() {
+        let agent = UserAgentSpy()
+        let sut = UserAgentAudioDeviceUpdateUseCase(agent: agent)
+
         sut.systemAudioDevicesDidUpdate()
 
-        XCTAssertTrue(userAgent.didCallUpdateAudioDevices)
+        XCTAssertTrue(agent.didCallUpdateAudioDevices)
     }
 }

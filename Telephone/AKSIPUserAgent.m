@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -40,8 +40,8 @@ enum {
 
 const NSInteger kAKSIPUserAgentInvalidIdentifier = PJSUA_INVALID_ID;
 
-// Maximum number of nameservers to take into account.
-static const NSInteger kAKSIPUserAgentNameserversMax = 4;
+// Maximum number of name servers to take into account.
+static const NSInteger kAKSIPUserAgentNameServersMax = 4;
 
 // User agent defaults.
 static const NSInteger kAKSIPUserAgentDefaultOutboundProxyPort = 5060;
@@ -50,15 +50,21 @@ static const NSInteger kAKSIPUserAgentDefaultLogLevel = 3;
 static const NSInteger kAKSIPUserAgentDefaultConsoleLogLevel = 0;
 static const BOOL kAKSIPUserAgentDefaultDetectsVoiceActivity = YES;
 static const BOOL kAKSIPUserAgentDefaultUsesICE = NO;
+static const BOOL kAKSIPUserAgentDefaultUsesQoS = YES;
 static const NSInteger kAKSIPUserAgentDefaultTransportPort = 0;
 static const BOOL kAKSIPUserAgentDefaultUsesG711Only = NO;
+static const BOOL kAKSIPUserAgentDefaultLocksCodec = YES;
 
 
 @interface AKSIPUserAgent ()
 
-// Read-write redeclarations.
+// Read-write redeclaration.
 @property(nonatomic) AKSIPUserAgentState state;
+
 @property(nonatomic) pj_pool_t *pool;
+@property(nonatomic) pj_pool_t *poolPrivate;
+
+@property(nonatomic, readonly) NSMutableArray *accounts;
 
 // Ringback slot.
 @property(nonatomic, assign) pjsua_conf_port_id ringbackSlot;
@@ -68,6 +74,12 @@ static const BOOL kAKSIPUserAgentDefaultUsesG711Only = NO;
 
 // Ringback count.
 @property(nonatomic, assign) NSInteger ringbackCount;
+
+// Transport identifiers.
+@property(nonatomic) pjsua_transport_id UDP4TransportIdentifier;
+@property(nonatomic) pjsua_transport_id UDP6TransportIdentifier;
+@property(nonatomic) pjsua_transport_id TCP4TransportIdentifier;
+@property(nonatomic) pjsua_transport_id TCP6TransportIdentifier;
 
 @property(nonatomic, readonly) NSThread *thread;
 
@@ -121,21 +133,34 @@ static const BOOL kAKSIPUserAgentDefaultUsesG711Only = NO;
     return self.state == AKSIPUserAgentStateStarted;
 }
 
-- (NSUInteger)activeCallsCount {
-    return pjsua_call_get_count();
+- (NSInteger)activeCallsCount {
+    NSInteger count = 0;
+    for (AKSIPAccount *account in self.accounts) {
+        count += [account activeCallsCount];
+    }
+    return count;
+}
+
+- (BOOL)hasUnansweredIncomingCalls {
+    for (AKSIPAccount *account in self.accounts) {
+        if (account.hasUnansweredIncomingCalls) {
+            return YES;
+        }
+    }
+    return NO;
 }
 
 - (AKSIPUserAgentCallData *)callData {
     return _callData;
 }
 
-- (void)setNameservers:(NSArray *)newNameservers {
-    if (_nameservers != newNameservers) {
+- (void)setNameServers:(NSArray *)newNameServers {
+    if (_nameServers != newNameServers) {
         
-        if ([newNameservers count] > kAKSIPUserAgentNameserversMax) {
-            _nameservers = [newNameservers subarrayWithRange:NSMakeRange(0, kAKSIPUserAgentNameserversMax)];
+        if ([newNameServers count] > kAKSIPUserAgentNameServersMax) {
+            _nameServers = [newNameServers subarrayWithRange:NSMakeRange(0, kAKSIPUserAgentNameServersMax)];
         } else {
-            _nameservers = [newNameservers copy];
+            _nameServers = [newNameServers copy];
         }
     }
 }
@@ -213,10 +238,18 @@ static const BOOL kAKSIPUserAgentDefaultUsesG711Only = NO;
     [self setConsoleLogLevel:kAKSIPUserAgentDefaultConsoleLogLevel];
     [self setDetectsVoiceActivity:kAKSIPUserAgentDefaultDetectsVoiceActivity];
     [self setUsesICE:kAKSIPUserAgentDefaultUsesICE];
+    [self setUsesQoS:kAKSIPUserAgentDefaultUsesQoS];
     [self setTransportPort:kAKSIPUserAgentDefaultTransportPort];
     [self setUsesG711Only:kAKSIPUserAgentDefaultUsesG711Only];
+    [self setLocksCodec:kAKSIPUserAgentDefaultLocksCodec];
     
-    [self setRingbackSlot:kAKSIPUserAgentInvalidIdentifier];
+    [self setRingbackSlot:PJSUA_INVALID_ID];
+    [self setUDP4TransportIdentifier:PJSUA_INVALID_ID];
+    [self setUDP6TransportIdentifier:PJSUA_INVALID_ID];
+    [self setTCP4TransportIdentifier:PJSUA_INVALID_ID];
+    [self setTCP6TransportIdentifier:PJSUA_INVALID_ID];
+
+    _poolQueue = dispatch_queue_create("com.tlphn.Telephone.AKSIPUserAgent.PJSIP.pool", DISPATCH_QUEUE_SERIAL);
 
     _thread = [[WaitingThread alloc] init];
     _thread.qualityOfService = NSQualityOfServiceUserInitiated;
@@ -246,6 +279,12 @@ static const BOOL kAKSIPUserAgentDefaultUsesG711Only = NO;
 }
 
 - (void)thread_startWithCompletion:(void (^ _Nonnull)(BOOL didStart))completion {
+    @autoreleasepool {
+        [self thread_startInAutoreleasePoolWithCompletion:completion];
+    }
+}
+
+- (void)thread_startInAutoreleasePoolWithCompletion:(void (^ _Nonnull)(BOOL didStart))completion {
     pj_status_t status;
 
     if (!pj_thread_is_registered()) {
@@ -265,9 +304,16 @@ static const BOOL kAKSIPUserAgentDefaultUsesG711Only = NO;
         return;
     }
 
-    // Create pool for PJSUA.
-    self.pool = pjsua_pool_create("AKSIPUserAgent-pjsua", 1000, 1000);
+    self.pool = pjsua_pool_create("AKSIPUserAgent-public", 4000, 1000);
     if (!self.pool) {
+        NSLog(@"Could not create memory pool");
+        [self thread_stop];
+        [self thread_callOnMain:completion withFlag:NO];
+        return;
+    }
+
+    self.poolPrivate = pjsua_pool_create("AKSIPUserAgent-private", 4000, 1000);
+    if (!self.poolPrivate) {
         NSLog(@"Could not create memory pool");
         [self thread_stop];
         [self thread_callOnMain:completion withFlag:NO];
@@ -284,13 +330,13 @@ static const BOOL kAKSIPUserAgentDefaultUsesG711Only = NO;
     pjsua_media_config_default(&mediaConfig);
     pjsua_transport_config_default(&transportConfig);
 
-    userAgentConfig.max_calls = (unsigned)kAKSIPCallsMax;
+    userAgentConfig.max_calls = (unsigned)self.maxCalls;
     userAgentConfig.use_timer = PJSUA_SIP_TIMER_INACTIVE;
 
-    if ([[self nameservers] count] > 0) {
-        userAgentConfig.nameserver_count = (unsigned)[[self nameservers] count];
-        for (NSUInteger i = 0; i < [[self nameservers] count]; ++i) {
-            userAgentConfig.nameserver[i] = [[self nameservers][i] pjString];
+    if ([[self nameServers] count] > 0) {
+        userAgentConfig.nameserver_count = (unsigned)[[self nameServers] count];
+        for (NSUInteger i = 0; i < [[self nameServers] count]; ++i) {
+            userAgentConfig.nameserver[i] = [[self nameServers][i] pjString];
         }
     }
 
@@ -298,19 +344,24 @@ static const BOOL kAKSIPUserAgentDefaultUsesG711Only = NO;
         userAgentConfig.outbound_proxy_cnt = 1;
         
         if ([self outboundProxyPort] == kAKSIPUserAgentDefaultOutboundProxyPort) {
-            userAgentConfig.outbound_proxy[0] = [[NSString stringWithFormat:@"sip:%@",
-                                                  [self outboundProxyHost]] pjString];
+            userAgentConfig.outbound_proxy[0] = [URI URIWithHost:self.outboundProxyHost].stringValue.pjString;
         } else {
-            userAgentConfig.outbound_proxy[0]
-                = [[NSString stringWithFormat:@"sip:%@:%lu",
-                    [self outboundProxyHost], [self outboundProxyPort]] pjString];
+            userAgentConfig.outbound_proxy[0] = [URI URIWithHost:self.outboundProxyHost
+                                                            port:@(self.outboundProxyPort).stringValue].stringValue.pjString;
         }
     }
 
     if ([[self STUNServerHost] length] > 0) {
-        userAgentConfig.stun_host = [[NSString stringWithFormat:@"%@:%lu",
-                                      [self STUNServerHost], [self STUNServerPort]] pjString];
+        userAgentConfig.stun_srv_cnt = 1;
+
+        if ([self STUNServerPort] == kAKSIPUserAgentDefaultSTUNServerPort) {
+            userAgentConfig.stun_srv[0] = [[ServiceAddress alloc] initWithHost:self.STUNServerHost].stringValue.pjString;
+        } else {
+            userAgentConfig.stun_srv[0] = [[ServiceAddress alloc] initWithHost:self.STUNServerHost
+                                                                          port:@(self.STUNServerPort).stringValue].stringValue.pjString;
+        }
     }
+    userAgentConfig.stun_try_ipv6 = PJ_TRUE;
 
     userAgentConfig.user_agent = [[self userAgentString] pjString];
 
@@ -323,11 +374,14 @@ static const BOOL kAKSIPUserAgentDefaultUsesG711Only = NO;
     mediaConfig.no_vad = ![self detectsVoiceActivity];
     mediaConfig.enable_ice = [self usesICE];
     mediaConfig.snd_auto_close_time = 1;
-    transportConfig.port = (unsigned)[self transportPort];
+    mediaConfig.ec_options = PJMEDIA_ECHO_USE_SW_ECHO;
 
-    if ([[self transportPublicHost] length] > 0) {
-        transportConfig.public_addr = [[self transportPublicHost] pjString];
+    if (self.usesQoS) {
+        transportConfig.qos_params.flags = PJ_QOS_PARAM_HAS_DSCP;
+        transportConfig.qos_params.dscp_val = 24;
     }
+
+    transportConfig.port = (unsigned)[self transportPort];
 
     userAgentConfig.cb.on_incoming_call = &PJSUAOnIncomingCall;
     userAgentConfig.cb.on_call_state = &PJSUAOnCallState;
@@ -355,7 +409,7 @@ static const BOOL kAKSIPUserAgentDefaultUsesG711Only = NO;
 
     name = pj_str("ringback");
     pjmedia_port *aRingbackPort;
-    status = pjmedia_tonegen_create2([self pool],
+    status = pjmedia_tonegen_create2(self.poolPrivate,
                                      &name,
                                      mediaConfig.clock_rate,
                                      mediaConfig.channel_count,
@@ -384,7 +438,7 @@ static const BOOL kAKSIPUserAgentDefaultUsesG711Only = NO;
     pjmedia_tonegen_play([self ringbackPort], kAKRingbackCount, tone, PJMEDIA_TONEGEN_LOOP);
 
     pjsua_conf_port_id aRingbackSlot;
-    status = pjsua_conf_add_port([self pool], [self ringbackPort], &aRingbackSlot);
+    status = pjsua_conf_add_port(self.poolPrivate, [self ringbackPort], &aRingbackSlot);
     if (status != PJ_SUCCESS) {
         NSLog(@"Error adding media port for ringback tones");
         [self thread_stop];
@@ -394,22 +448,23 @@ static const BOOL kAKSIPUserAgentDefaultUsesG711Only = NO;
 
     [self setRingbackSlot:aRingbackSlot];
 
-    // Add UDP transport.
-    pjsua_transport_id transportIdentifier;
-    status = pjsua_transport_create(PJSIP_TRANSPORT_UDP, &transportConfig, &transportIdentifier);
+    // Add UDP4 transport.
+    pjsua_transport_id UDP4TransportIdentifier = PJSUA_INVALID_ID;
+    status = pjsua_transport_create(PJSIP_TRANSPORT_UDP, &transportConfig, &UDP4TransportIdentifier);
     if (status != PJ_SUCCESS) {
-        NSLog(@"Error creating transport");
+        NSLog(@"Error creating UDP4 transport");
         [self thread_stop];
         [self thread_callOnMain:completion withFlag:NO];
         return;
     }
+    self.UDP4TransportIdentifier = UDP4TransportIdentifier;
 
-    // Get transport port chosen by PJSUA.
+    // Get UDP4 transport port chosen by PJSUA.
     if ([self transportPort] == 0) {
         pjsua_transport_info transportInfo;
-        status = pjsua_transport_get_info(transportIdentifier, &transportInfo);
+        status = pjsua_transport_get_info(UDP4TransportIdentifier, &transportInfo);
         if (status != PJ_SUCCESS) {
-            NSLog(@"Error getting transport info");
+            NSLog(@"Error getting UDP4 transport info");
         }
         
         [self setTransportPort:transportInfo.local_name.port];
@@ -418,11 +473,29 @@ static const BOOL kAKSIPUserAgentDefaultUsesG711Only = NO;
         transportConfig.port = (unsigned)[self transportPort];
     }
 
-    // Add TCP transport. Don't return, just leave a log message on error.
-    status = pjsua_transport_create(PJSIP_TRANSPORT_TCP, &transportConfig, NULL);
+    // Add UDP6 transport.
+    pjsua_transport_id UDP6TransportIdentifier = PJSUA_INVALID_ID;
+    status = pjsua_transport_create(PJSIP_TRANSPORT_UDP6, &transportConfig, &UDP6TransportIdentifier);
     if (status != PJ_SUCCESS) {
-        NSLog(@"Error creating TCP transport");
+        NSLog(@"Error creating UDP6 transport");
     }
+    self.UDP6TransportIdentifier = UDP6TransportIdentifier;
+
+    // Add TCP4 transport.
+    pjsua_transport_id TCP4TransportIdentifier = PJSUA_INVALID_ID;
+    status = pjsua_transport_create(PJSIP_TRANSPORT_TCP, &transportConfig, &TCP4TransportIdentifier);
+    if (status != PJ_SUCCESS) {
+        NSLog(@"Error creating TCP4 transport");
+    }
+    self.TCP4TransportIdentifier = TCP4TransportIdentifier;
+
+    // Add TCP6 transport.
+    pjsua_transport_id TCP6TransportIdentifier = PJSUA_INVALID_ID;
+    status = pjsua_transport_create(PJSIP_TRANSPORT_TCP6, &transportConfig, &TCP6TransportIdentifier);
+    if (status != PJ_SUCCESS) {
+        NSLog(@"Error creating TCP6 transport");
+    }
+    self.TCP6TransportIdentifier = TCP6TransportIdentifier;
 
     // Update codecs.
     [self updateCodecs];
@@ -466,15 +539,29 @@ static const BOOL kAKSIPUserAgentDefaultUsesG711Only = NO;
 }
 
 - (void)thread_stop {
-    if (self.ringbackPort && self.ringbackSlot != kAKSIPUserAgentInvalidIdentifier) {
+    @autoreleasepool {
+        [self thread_stopInAutoreleasePool];
+    }
+}
+
+- (void)thread_stopInAutoreleasePool {
+    if (self.ringbackPort && self.ringbackSlot != PJSUA_INVALID_ID) {
         pjsua_conf_remove_port(self.ringbackSlot);
-        self.ringbackSlot = kAKSIPUserAgentInvalidIdentifier;
+        self.ringbackSlot = PJSUA_INVALID_ID;
         pjmedia_port_destroy(self.ringbackPort);
         self.ringbackPort = NULL;
     }
+    self.UDP4TransportIdentifier = PJSUA_INVALID_ID;
+    self.UDP6TransportIdentifier = PJSUA_INVALID_ID;
+    self.TCP4TransportIdentifier = PJSUA_INVALID_ID;
+    self.TCP6TransportIdentifier = PJSUA_INVALID_ID;
     if (self.pool) {
         pj_pool_release(self.pool);
         self.pool = NULL;
+    }
+    if (self.poolPrivate) {
+        pj_pool_release(self.poolPrivate);
+        self.poolPrivate = NULL;
     }
     if (pjsua_destroy() != PJ_SUCCESS) {
         NSLog(@"Error stopping SIP user agent");
@@ -488,6 +575,13 @@ static const BOOL kAKSIPUserAgentDefaultUsesG711Only = NO;
     [[NSNotificationCenter defaultCenter] postNotificationName:AKSIPUserAgentDidFinishStoppingNotification object:self];
 }
 
+- (pj_pool_t *)poolResettingIfNeeded {
+    if (pj_pool_get_used_size(self.pool) > 4000) {
+        pj_pool_reset(self.pool);
+    }
+    return self.pool;
+}
+
 - (BOOL)addAccount:(AKSIPAccount *)anAccount withPassword:(NSString *)aPassword {
     if ([[self delegate] respondsToSelector:@selector(SIPUserAgentShouldAddAccount:)]) {
         if (![[self delegate] SIPUserAgentShouldAddAccount:anAccount]) {
@@ -498,11 +592,9 @@ static const BOOL kAKSIPUserAgentDefaultUsesG711Only = NO;
     pjsua_acc_config accountConfig;
     pjsua_acc_config_default(&accountConfig);
     
-    NSString *fullSIPURL = [NSString stringWithFormat:@"%@ <sip:%@>", [anAccount fullName], [anAccount SIPAddress]];
-    accountConfig.id = [fullSIPURL pjString];
-    
-    NSString *registerURI = [NSString stringWithFormat:@"sip:%@", [anAccount registrar]];
-    accountConfig.reg_uri = [registerURI pjString];
+    accountConfig.id = anAccount.uri.stringValue.pjString;
+
+    accountConfig.reg_uri = [[URI alloc] initWithAddress:anAccount.registrar].stringValue.pjString;
     
     accountConfig.cred_count = 1;
     if ([[anAccount realm] length] > 0) {
@@ -516,26 +608,44 @@ static const BOOL kAKSIPUserAgentDefaultUsesG711Only = NO;
     accountConfig.cred_info[0].data = [aPassword pjString];
     
     accountConfig.rtp_cfg.port = 4000;
+
+    if (self.usesQoS) {
+        accountConfig.rtp_cfg.qos_params.flags = PJ_QOS_PARAM_HAS_DSCP;
+        accountConfig.rtp_cfg.qos_params.dscp_val = 46;
+    }
     
     if ([[anAccount proxyHost] length] > 0) {
         accountConfig.proxy_cnt = 1;
         
         if ([anAccount proxyPort] == kAKSIPAccountDefaultSIPProxyPort) {
-            accountConfig.proxy[0] = [[NSString stringWithFormat:@"sip:%@", [anAccount proxyHost]] pjString];
+            accountConfig.proxy[0] = [URI URIWithHost:anAccount.proxyHost].stringValue.pjString;
         } else {
-            accountConfig.proxy[0] = [[NSString stringWithFormat:@"sip:%@:%lu",
-                                       [anAccount proxyHost], [anAccount proxyPort]] pjString];
+            accountConfig.proxy[0] = [URI URIWithHost:anAccount.proxyHost port:@(anAccount.proxyPort).stringValue].stringValue.pjString;
         }
     }
     
     accountConfig.reg_timeout = (unsigned)[anAccount reregistrationTime];
     
+    switch (anAccount.transport) {
+        case AKSIPTransportUDP:
+            accountConfig.transport_id = anAccount.usesIPv6 ? self.UDP6TransportIdentifier : self.UDP4TransportIdentifier;
+            break;
+        case AKSIPTransportTCP:
+            accountConfig.transport_id = anAccount.usesIPv6 ? self.TCP6TransportIdentifier : self.TCP4TransportIdentifier;
+        default:
+            break;
+    }
+
+    accountConfig.ipv6_media_use = anAccount.usesIPv6 ? PJSUA_IPV6_ENABLED : PJSUA_IPV6_DISABLED;
+
     accountConfig.allow_contact_rewrite = anAccount.updatesContactHeader ? PJ_TRUE : PJ_FALSE;
     accountConfig.allow_via_rewrite = anAccount.updatesViaHeader ? PJ_TRUE : PJ_FALSE;
+    accountConfig.allow_sdp_nat_rewrite = anAccount.updatesSDP ? PJ_TRUE : PJ_FALSE;
+
+    accountConfig.lock_codec = self.locksCodec ? PJ_TRUE : PJ_FALSE;
     
     pjsua_acc_id accountIdentifier;
-    pj_status_t status = pjsua_acc_add(&accountConfig, PJ_FALSE,
-                                       &accountIdentifier);
+    pj_status_t status = pjsua_acc_add(&accountConfig, PJ_FALSE, &accountIdentifier);
     if (status != PJ_SUCCESS) {
         NSLog(@"Error adding account %@ with status %d", anAccount, status);
         return NO;
@@ -605,7 +715,7 @@ static const BOOL kAKSIPUserAgentDefaultUsesG711Only = NO;
     self.callData[call.identifier].ringbackOn = PJ_TRUE;
     
     self.ringbackCount = self.ringbackCount + 1;
-    if (self.ringbackCount == 1 && self.ringbackSlot != kAKSIPUserAgentInvalidIdentifier) {
+    if (self.ringbackCount == 1 && self.ringbackSlot != PJSUA_INVALID_ID) {
         pjsua_conf_connect(self.ringbackSlot, 0);
     }
 }
@@ -617,7 +727,7 @@ static const BOOL kAKSIPUserAgentDefaultUsesG711Only = NO;
         pj_assert(self.ringbackCount > 0);
         
         self.ringbackCount = self.ringbackCount - 1;
-        if (self.ringbackCount == 0 && self.ringbackSlot != kAKSIPUserAgentInvalidIdentifier) {
+        if (self.ringbackCount == 0 && self.ringbackSlot != PJSUA_INVALID_ID) {
             pjsua_conf_disconnect(self.ringbackSlot, 0);
             pjmedia_tonegen_rewind(self.ringbackPort);
         }
@@ -708,15 +818,15 @@ static const BOOL kAKSIPUserAgentDefaultUsesG711Only = NO;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         priorities = @{
-                       @"speex/16000/1": @(130),
-                       @"speex/8000/1":  @(129),
-                       @"speex/32000/1": @(128),
-                       @"opus/48000/2":  @(127),
-                       @"iLBC/8000/1":   @(126),
-                       @"GSM/8000/1":    @(125),
-                       @"PCMU/8000/1":   @(124),
-                       @"PCMA/8000/1":   @(123),
-                       @"G722/16000/1":  @(122)
+                       @"opus/48000/2":  @(130),
+                       @"G722/16000/1":  @(129),
+                       @"PCMA/8000/1":   @(128),
+                       @"PCMU/8000/1":   @(127),
+                       @"speex/32000/1": @(0),
+                       @"speex/16000/1": @(0),
+                       @"speex/8000/1":  @(0),
+                       @"iLBC/8000/1":   @(0),
+                       @"GSM/8000/1":    @(0)
                        };
     });
     

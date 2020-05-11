@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -16,11 +16,12 @@
 //  GNU General Public License for more details.
 //
 
-import Foundation
+import Domain
 
-@objc public protocol UserAgent {
+public protocol UserAgent: class {
     var isStarted: Bool { get }
-    var hasActiveCalls: Bool { get }
+    var maxCalls: Int { get set }
+    func start()
     func audioDevices() throws -> [UserAgentAudioDevice]
     func updateAudioDevices()
     func selectSoundIODeviceIDs(input: Int, output: Int) throws

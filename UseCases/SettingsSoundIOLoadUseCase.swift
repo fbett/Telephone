@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -19,16 +19,16 @@
 import Domain
 
 public protocol SettingsSoundIOLoadUseCaseOutput: class {
-    func update(devices: AudioDevices, soundIO: PresentationSoundIO)
+    func update(soundIO: SystemDefaultingSoundIO, devices: SystemAudioDevices)
 }
 
 public final class SettingsSoundIOLoadUseCase {
-    fileprivate let repository: SystemAudioDeviceRepository
-    fileprivate let settings: KeyValueSettings
-    fileprivate let output: SettingsSoundIOLoadUseCaseOutput
+    private let factory: SystemAudioDevicesFactory
+    private let settings: KeyValueSettings
+    private let output: SettingsSoundIOLoadUseCaseOutput
 
-    public init(repository: SystemAudioDeviceRepository, settings: KeyValueSettings, output: SettingsSoundIOLoadUseCaseOutput) {
-        self.repository = repository
+    public init(factory: SystemAudioDevicesFactory, settings: KeyValueSettings, output: SettingsSoundIOLoadUseCaseOutput) {
+        self.factory = factory
         self.settings = settings
         self.output = output
     }
@@ -36,10 +36,9 @@ public final class SettingsSoundIOLoadUseCase {
 
 extension SettingsSoundIOLoadUseCase: ThrowingUseCase {
     public func execute() throws {
-        let devices = SystemAudioDevices(devices: try repository.allDevices())
+        let devices = try factory.make()
         output.update(
-            devices: AudioDevices(devices: devices),
-            soundIO: PresentationSoundIO(soundIO: PreferredSoundIO(devices: devices, settings: settings))
+            soundIO: SystemDefaultingSoundIO(SettingsSoundIO(devices: devices, settings: settings)), devices: devices
         )
     }
 }

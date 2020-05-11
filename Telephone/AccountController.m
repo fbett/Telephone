@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -22,90 +22,40 @@
 @import UseCases;
 
 #import "AKABAddressBook+Localizing.h"
-#import "AKABRecord+Querying.h"
 #import "AKKeychain.h"
 #import "AKNetworkReachability.h"
 #import "AKNSString+Scanning.h"
-#import "AKNSWindow+Resizing.h"
-#import "AKSIPAccount.h"
-#import "AKSIPCall.h"
-#import "AKSIPURI.h"
 #import "AKSIPURIFormatter.h"
-#import "AKSIPUserAgent.h"
 #import "AKTelephoneNumberFormatter.h"
 
-#import "AccountToAccountControllerAdapter.h"
+#import "AccountControllerToAccountAdapter.h"
+#import "AccountViewController.h"
+#import "AccountWindowController.h"
 #import "ActiveAccountViewController.h"
-#import "ActiveCallViewController.h"
-#import "AppController.h"
 #import "AuthenticationFailureController.h"
 #import "CallTransferController.h"
-#import "EndedCallViewController.h"
-#import "IncomingCallViewController.h"
-#import "UserDefaultsKeys.h"
+#import "SIPResponseLocalization.h"
 
 #import "Telephone-Swift.h"
 
-
-// Account state toolbar item widths.
-//
-// English.
-static const CGFloat kOfflineEnglishWidth = 73.0;
-static const CGFloat kAvailableEnglishWidth = 84.0;
-static const CGFloat kUnavailableEnglishWidth = 98.0;
-static const CGFloat kConnectingEnglishWidth = 108.0;
-//
-// Russian.
-static const CGFloat kOfflineRussianWidth = 81.0;
-static const CGFloat kAvailableRussianWidth = 90.0;
-static const CGFloat kUnavailableRussianWidth = 103.0;
-static const CGFloat kConnectingRussianWidth = 115.0;
-//
-// German.
-static const CGFloat kOfflineGermanWidth = 73.0;
-static const CGFloat kAvailableGermanWidth = 90.0;
-static const CGFloat kUnavailableGermanWidth = 120.0;
-static const CGFloat kConnectingGermanWidth = 104.0;
-
 NSString * const kEmailSIPLabel = @"sip";
+static NSString * const kRussian = @"ru";
 
-NSString * const kEnglish = @"en";
-NSString * const kRussian = @"ru";
-NSString * const kGerman = @"de";
+@interface AccountController () <AccountWindowControllerDelegate>
 
-static NSArray<NSLayoutConstraint *> *FullSizeConstraintsForView(NSView *view);
+@property(nonatomic) AKNetworkReachability *registrarReachability;
 
+@property(nonatomic, readonly) AKSIPUserAgent *userAgent;
+@property(nonatomic, readonly) WorkspaceSleepStatus *sleepStatus;
 
-@interface AccountController ()
+@property(nonatomic, readonly) AuthenticationFailureController *authenticationFailureController;
 
-@property(nonatomic) ActiveAccountViewController *activeAccountViewController;
-@property(nonatomic) CallHistoryViewController *callHistoryViewController;
-@property(nonatomic) CallHistoryViewEventTarget *callHistoryViewEventTarget;
+@property(nonatomic, readonly) AccountViewController *accountViewController;
+@property(nonatomic, readonly) AccountWindowController *windowController;
 
 @property(nonatomic, readonly, getter=isAccountAdded) BOOL accountAdded;
-
-// Timer for account re-registration in case of registration error.
 @property(nonatomic, strong) NSTimer *reRegistrationTimer;
-
 @property(nonatomic, copy) NSString *destinationToCall;
-
-@property(nonatomic, weak) IBOutlet NSView *activeAccountView;
-@property(nonatomic, weak) IBOutlet NSView *callHistoryView;
-
-@property(nonatomic, weak) IBOutlet NSLayoutConstraint *activeAccountViewHeightConstraint;
-@property(nonatomic, weak) IBOutlet NSLayoutConstraint *horizontalLineHeightConstraint;
-@property(nonatomic) CGFloat originalActiveAccountViewHeight;
-@property(nonatomic) CGFloat originalHorizontalLineHeight;
-
-@property(nonatomic, weak) IBOutlet NSToolbarItem *accountStateToolbarItem;
-@property(nonatomic, weak) IBOutlet NSImageView *accountStateImageView;
-@property(nonatomic, weak) IBOutlet NSPopUpButton *accountStatePopUp;
-@property(nonatomic, weak) IBOutlet NSMenuItem *availableStateItem;
-@property(nonatomic, weak) IBOutlet NSMenuItem *unavailableStateItem;
-@property(nonatomic, weak) IBOutlet NSMenuItem *offlineStateItem;
-
-// Method to be called when account re-registration timer fires.
-- (void)reRegistrationTimerTick:(NSTimer *)theTimer;
 
 @end
 
@@ -119,9 +69,8 @@ static NSArray<NSLayoutConstraint *> *FullSizeConstraintsForView(NSView *view);
     NSNotificationCenter *notificationCenter = [NSNotificationCenter defaultCenter];
     
     if (flag) {
-        ServiceAddress *address = [[ServiceAddress alloc] initWithString:self.account.registrar];
         AKNetworkReachability *reachability
-            = [AKNetworkReachability networkReachabilityWithHost:address.host];
+            = [AKNetworkReachability networkReachabilityWithHost:self.account.registrar.host];
         [self setRegistrarReachability:reachability];
         
         if (reachability != nil) {
@@ -146,11 +95,8 @@ static NSArray<NSLayoutConstraint *> *FullSizeConstraintsForView(NSView *view);
 }
 
 - (void)setAccountRegistered:(BOOL)flag {
-    if ([self reRegistrationTimer] != nil) {
-        [[self reRegistrationTimer] invalidate];
-        [self setReRegistrationTimer:nil];
-    }
-    
+    [self invalidateReRegistrationTimer];
+
     if ([self isAccountAdded]) {
         [self showConnectingState];
         
@@ -188,8 +134,7 @@ static NSArray<NSLayoutConstraint *> *FullSizeConstraintsForView(NSView *view);
                 NSString *statusText;
                 NSString *preferredLocalization = [[NSBundle mainBundle] preferredLocalizations][0];
                 if ([preferredLocalization isEqualToString:kRussian]) {
-                    statusText = [(AppController *)[NSApp delegate] localizedStringForSIPResponseCode:
-                                  [[self account] registrationStatus]];
+                    statusText = LocalizedStringForSIPResponseCode([[self account] registrationStatus]);
                 } else {
                     statusText = [[self account] registrationStatusText];
                 }
@@ -228,34 +173,44 @@ static NSArray<NSLayoutConstraint *> *FullSizeConstraintsForView(NSView *view);
 }
 
 - (BOOL)canMakeCalls {
-    return self.activeAccountViewController.allowsCallDestinationInput;
+    return self.windowController.allowsCallDestinationInput;
 }
 
 - (instancetype)initWithSIPAccount:(AKSIPAccount *)account
+                accountDescription:(NSString *)accountDescription
                          userAgent:(AKSIPUserAgent *)userAgent
                   ringtonePlayback:(id<RingtonePlaybackUseCase>)ringtonePlayback
-                       musicPlayer:(id<MusicPlayer>)musicPlayer
                        sleepStatus:(WorkspaceSleepStatus *)sleepStatus
-                           factory:(AsyncCallHistoryViewEventTargetFactory *)factory {
+ callHistoryViewEventTargetFactory:(AsyncCallHistoryViewEventTargetFactory *)callHistoryViewEventTargetFactory
+       purchaseCheckUseCaseFactory:(AsyncCallHistoryPurchaseCheckUseCaseFactory *)purchaseCheckUseCaseFactory
+              storeWindowPresenter:(StoreWindowPresenter *)storeWindowPresenter{
 
-    self = [super initWithWindowNibName:@"Account"];
+    self = [super init];
     if (self == nil) {
         return nil;
     }
 
     _account = account;
+    _account.delegate = self;
     _userAgent = userAgent;
     _ringtonePlayback = ringtonePlayback;
-    _musicPlayer = musicPlayer;
     _sleepStatus = sleepStatus;
-    _factory = factory;
-    
+
     _callControllers = [[NSMutableArray alloc] init];
-    _accountDescription = account.SIPAddress;
+    _accountDescription = [accountDescription copy];
     _destinationToCall = @"";
 
-    [[self account] setDelegate:self];
-    
+    _accountViewController
+    = [[AccountViewController alloc] initWithActiveAccountViewController:[[ActiveAccountViewController alloc] initWithAccountController:self]
+                                               callHistoryViewController:[[CallHistoryViewController alloc] init]
+                                       callHistoryViewEventTargetFactory:callHistoryViewEventTargetFactory
+                                             purchaseCheckUseCaseFactory:purchaseCheckUseCaseFactory
+                                                                 account:[[AccountControllerToAccountAdapter alloc] initWithController:self]
+                                                    storeWindowPresenter:storeWindowPresenter];
+    _windowController = [[AccountWindowController alloc] initWithAccountDescription:_accountDescription
+                                                                         SIPAddress:_account.SIPAddress
+                                                              accountViewController:_accountViewController
+                                                                           delegate:self];
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(SIPUserAgentDidFinishStarting:)
                                                  name:AKSIPUserAgentDidFinishStartingNotification
@@ -283,10 +238,6 @@ static NSArray<NSLayoutConstraint *> *FullSizeConstraintsForView(NSView *view);
     return [NSString stringWithFormat:@"%@ controller", [self account]];
 }
 
-- (void)awakeFromNib {
-    [self setShouldCascadeWindows:NO];
-}
-
 - (void)registerAccount {
     if (![[self userAgent] isStarted]) {
         [self setAttemptingToRegisterAccount:YES];
@@ -303,12 +254,7 @@ static NSArray<NSLayoutConstraint *> *FullSizeConstraintsForView(NSView *view);
 
 - (void)removeAccountFromUserAgent {
     NSAssert([self isEnabled], @"Account conroller must be enabled to remove account from the user agent.");
-    
-    if ([self reRegistrationTimer] != nil) {
-        [[self reRegistrationTimer] invalidate];
-        [self setReRegistrationTimer:nil];
-    }
-    
+    [self invalidateReRegistrationTimer];
     [self showOfflineState];
     [[self userAgent] removeAccount:[self account]];
 }
@@ -346,8 +292,6 @@ static NSArray<NSLayoutConstraint *> *FullSizeConstraintsForView(NSView *view);
         aCallController = [[CallController alloc] initWithWindowNibName:@"Call"
                                                       accountController:self
                                                               userAgent:self.userAgent
-                                                       ringtonePlayback:self.ringtonePlayback
-                                                            musicPlayer:self.musicPlayer
                                                                delegate:self];
     } else {
         aCallController = callTransferController;
@@ -360,19 +304,16 @@ static NSArray<NSLayoutConstraint *> *FullSizeConstraintsForView(NSView *view);
     
     // Set title.
     if ([[destinationURI host] length] > 0) {
-        [[aCallController window] setTitle:[destinationURI SIPAddress]];
+        [aCallController setTitle:[destinationURI SIPAddress]];
         
     } else if (![enteredCallDestinationString ak_hasLetters]) {
         if ([enteredCallDestinationString ak_isTelephoneNumber] && [defaults boolForKey:kFormatTelephoneNumbers]) {
-            [[aCallController window] setTitle:
-             [telephoneNumberFormatter stringForObjectValue:enteredCallDestinationString]];
+            [aCallController setTitle:[telephoneNumberFormatter stringForObjectValue:enteredCallDestinationString]];
         } else {
-            [[aCallController window] setTitle:enteredCallDestinationString];
+            [aCallController setTitle:enteredCallDestinationString];
         }
     } else {
-        NSString *SIPAddress = [NSString stringWithFormat:@"%@@%@",
-                                [destinationURI user], [[[self account] registrationURI] host]];
-        [[aCallController window] setTitle:SIPAddress];
+        [aCallController setTitle:[[SIPAddress alloc] initWithUser:destinationURI.user host:self.account.uri.host].stringValue];
     }
     
     // Set displayed name.
@@ -399,7 +340,7 @@ static NSArray<NSLayoutConstraint *> *FullSizeConstraintsForView(NSView *view);
     [destinationURI setDisplayName:@""];
     
     if ([[destinationURI host] length] == 0) {
-        [destinationURI setHost:[[[self account] registrationURI] host]];
+        [destinationURI setHost:[[[self account] uri] host]];
     }
     
     // Set URI for redial.
@@ -438,19 +379,17 @@ static NSArray<NSLayoutConstraint *> *FullSizeConstraintsForView(NSView *view);
     }
 }
 
-- (void)makeCallToDestinationRegisteringAccountIfNeeded:(NSString *)destination {
+- (void)makeCallToDestinationRegisteringAccountIfNeeded:(SanitizedCallDestination *)destination {
     if (![self isAccountAdded]) {
-        [self setDestinationToCall:destination];
+        [self setDestinationToCall:destination.value];
         [self registerAccount];
     } else {
-        [self makeCallToDestination:destination];
+        [self makeCallToDestination:destination.value];
     }
 }
 
 - (void)makeCallToDestination:(NSString *)destination {
-    [[[self activeAccountViewController] callDestinationField] setTokenStyle:NSTokenStyleRounded];
-    [[[self activeAccountViewController] callDestinationField] setStringValue:destination];
-    [[self activeAccountViewController] makeCall:self];
+    [self.windowController makeCallToDestination:destination];
 }
 
 - (void)makeCallToSavedDestination {
@@ -458,27 +397,49 @@ static NSArray<NSLayoutConstraint *> *FullSizeConstraintsForView(NSView *view);
     [self setDestinationToCall:@""];
 }
 
-- (IBAction)changeAccountState:(NSPopUpButton *)sender {
-    if ([self reRegistrationTimer] != nil) {
-        [[self reRegistrationTimer] invalidate];
-        [self setReRegistrationTimer:nil];
-    }
-    
-    if ([sender.selectedItem isEqual:self.offlineStateItem]) {
-        [self setAccountUnavailable:NO];
-        [self removeAccountFromUserAgent];
-        
-    } else if ([sender.selectedItem isEqual:self.unavailableStateItem]) {
-        if ([self isAccountRegistered] || ![self isAccountAdded]) {
-            [self setAccountUnavailable:YES];
-            [self setShouldPresentRegistrationError:YES];
-            [self unregisterAccount];
-        }
-        
-    } else if ([sender.selectedItem isEqual:self.availableStateItem]) {
-        [self setAccountUnavailable:NO];
-        [self setShouldPresentRegistrationError:YES];
-        [self registerAccount];
+- (void)showWindow {
+    [self.windowController showWindow:self];
+}
+
+- (void)showWindowWithoutMakingKey {
+    [self.windowController showWindowWithoutMakingKey];
+}
+
+- (void)hideWindow {
+    [self.windowController hideWindow];
+}
+
+- (BOOL)isWindowKey {
+    return self.windowController.isWindowKey;
+}
+
+- (void)orderWindow:(NSWindowOrderingMode)place relativeTo:(NSInteger)otherWindow {
+    [self.windowController orderWindow:place relativeTo:otherWindow];
+}
+
+- (NSInteger)windowNumber {
+    return self.windowController.windowNumber;
+}
+
+- (void)changeAccountState:(AccountWindowControllerAccountState)state {
+    [self invalidateReRegistrationTimer];
+    switch (state) {
+        case AccountWindowControllerAccountStateOffline:
+            self.accountUnavailable = NO;
+            [self removeAccountFromUserAgent];
+            break;
+        case AccountWindowControllerAccountStateAvailable:
+            self.accountUnavailable = NO;
+            self.shouldPresentRegistrationError = YES;
+            [self registerAccount];
+            break;
+        case AccountWindowControllerAccountStateUnavailable:
+            if (self.isAccountRegistered || !self.isAccountAdded) {
+                self.accountUnavailable = YES;
+                self.shouldPresentRegistrationError = YES;
+                [self unregisterAccount];
+            }
+            break;
     }
 }
 
@@ -498,162 +459,43 @@ static NSArray<NSLayoutConstraint *> *FullSizeConstraintsForView(NSView *view);
         [alert setInformativeText:error];
     }
     
-    [alert beginSheetModalForWindow:self.window completionHandler:nil];
+    [self.windowController showAlert:alert];
 }
 
 
 - (void)showAvailableState {
-    NSSize size = [[self accountStateToolbarItem] maxSize];
-    NSString *localization = [[NSBundle mainBundle] preferredLocalizations][0];
-    if ([localization isEqualToString:kEnglish]) {
-        size.width = kAvailableEnglishWidth;
-    } else if ([localization isEqualToString:kRussian]) {
-        size.width = kAvailableRussianWidth;
-    } else if ([localization isEqualToString:kGerman]) {
-        size.width = kAvailableGermanWidth;
-    }
-    [[self accountStateToolbarItem] setMaxSize:size];
-
-    [[self accountStatePopUp] setTitle:NSLocalizedString(@"Available", @"Account registration Available menu item.")];
-    [[self accountStateImageView] setImage:[NSImage imageNamed:@"available-state"]];
-
-    [[self availableStateItem] setState:NSOnState];
-    [[self unavailableStateItem] setState:NSOffState];
-
-    [NSAnimationContext runAnimationGroup:^(NSAnimationContext * _Nonnull context) {
-        self.activeAccountViewHeightConstraint.animator.constant = self.originalActiveAccountViewHeight;
-        self.horizontalLineHeightConstraint.animator.constant = self.originalHorizontalLineHeight;
-    } completionHandler:^{
-        [self.activeAccountViewController allowCallDestinationInput];
-    }];
+    [self.windowController showAvailableState];
 }
 
 - (void)showUnavailableState {
-    NSSize size = [[self accountStateToolbarItem] maxSize];
-    NSString *localization = [[NSBundle mainBundle] preferredLocalizations][0];
-    if ([localization isEqualToString:kEnglish]) {
-        size.width = kUnavailableEnglishWidth;
-    } else if ([localization isEqualToString:kRussian]) {
-        size.width = kUnavailableRussianWidth;
-    } else if ([localization isEqualToString:kGerman]) {
-        size.width = kUnavailableGermanWidth;
-    }
-    [[self accountStateToolbarItem] setMaxSize:size];
-
-    [[self accountStatePopUp] setTitle:NSLocalizedString(@"Unavailable", @"Account registration Unavailable menu item.")];
-    [[self accountStateImageView] setImage:[NSImage imageNamed:@"unavailable-state"]];
-
-    [[self availableStateItem] setState:NSOffState];
-    [[self unavailableStateItem] setState:NSOnState];
-
-    [NSAnimationContext runAnimationGroup:^(NSAnimationContext * _Nonnull context) {
-        self.activeAccountViewHeightConstraint.animator.constant = self.originalActiveAccountViewHeight;
-        self.horizontalLineHeightConstraint.animator.constant = self.originalHorizontalLineHeight;
-    } completionHandler:^{
-        [self.activeAccountViewController allowCallDestinationInput];
-    }];
-}
-
-- (void)showOfflineStateAnimated:(BOOL)animated {
-    NSSize size = [[self accountStateToolbarItem] maxSize];
-    NSString *localization = [[NSBundle mainBundle] preferredLocalizations][0];
-    if ([localization isEqualToString:kEnglish]) {
-        size.width = kOfflineEnglishWidth;
-    } else if ([localization isEqualToString:kRussian]) {
-        size.width = kOfflineRussianWidth;
-    } else if ([localization isEqualToString:kGerman]) {
-        size.width = kOfflineGermanWidth;
-    }
-    [[self accountStateToolbarItem] setMaxSize:size];
-
-    [[self accountStatePopUp] setTitle:NSLocalizedString(@"Offline", @"Account registration Offline menu item.")];
-    [[self accountStateImageView] setImage:[NSImage imageNamed:@"offline-state"]];
-
-    [[self availableStateItem] setState:NSOffState];
-    [[self unavailableStateItem] setState:NSOffState];
-
-    [self.activeAccountViewController disallowCallDestinationInput];
-
-    if (animated) {
-        self.activeAccountViewHeightConstraint.animator.constant = 0;
-        self.horizontalLineHeightConstraint.animator.constant = 0;
-    } else {
-        self.activeAccountViewHeightConstraint.constant = 0;
-        self.horizontalLineHeightConstraint.constant = 0;
-    }
+    [self.windowController showUnavailableState];
 }
 
 - (void)showOfflineState {
-    [self showOfflineStateAnimated:YES];
+    [self.windowController showOfflineState];
 }
 
 - (void)showConnectingState {
-    NSSize size = [[self accountStateToolbarItem] maxSize];
-    NSString *localization = [[NSBundle mainBundle] preferredLocalizations][0];
-    if ([localization isEqualToString:kEnglish]) {
-        size.width = kConnectingEnglishWidth;
-    } else if ([localization isEqualToString:kRussian]) {
-        size.width = kConnectingRussianWidth;
-    } else if ([localization isEqualToString:kGerman]) {
-        size.width = kConnectingGermanWidth;
-    }
-    [[self accountStateToolbarItem] setMaxSize:size];
-
-    [[self accountStatePopUp] setTitle:
-     NSLocalizedString(@"Connecting...", @"Account registration Connecting... menu item.")];
+    [self.windowController showConnectingState];
 }
 
 - (void)reRegistrationTimerTick:(NSTimer *)theTimer {
     [[self account] setRegistered:YES];
 }
 
-
-#pragma mark -
-#pragma mark NSWindow delegate methods
-
-- (void)windowDidLoad {
-    self.window.title = self.accountDescription;
-    self.window.frameAutosaveName = self.account.SIPAddress;
-    self.window.excludedFromWindowsMenu = YES;
-
-    self.originalActiveAccountViewHeight = self.activeAccountViewHeightConstraint.constant;
-    self.originalHorizontalLineHeight = self.horizontalLineHeightConstraint.constant;
-
-    self.activeAccountViewController = [[ActiveAccountViewController alloc] initWithAccountController:self];
-    [self.activeAccountView addSubview:self.activeAccountViewController.view];
-    [self.activeAccountView addConstraints:FullSizeConstraintsForView(self.activeAccountViewController.view)];
-
-    self.callHistoryViewController = [[CallHistoryViewController alloc] init];
-    [self.factory makeWithAccount:[[AccountToAccountControllerAdapter alloc] initWithController:self]
-                             view:self.callHistoryViewController
-                       completion:^(CallHistoryViewEventTarget * _Nonnull target) {
-                           self.callHistoryViewEventTarget = target;
-                           self.callHistoryViewController.target = self.callHistoryViewEventTarget;
-                       }];
-
-    [self.callHistoryView addSubview:self.callHistoryViewController.view];
-    [self.callHistoryView addConstraints:FullSizeConstraintsForView(self.callHistoryViewController.view)];
-
-    [self.activeAccountViewController updateNextKeyView:self.callHistoryViewController.keyView];
-    [self.callHistoryViewController updateNextKeyView:self.activeAccountViewController.keyView];
-
-    [self showOfflineStateAnimated:NO];
+- (void)invalidateReRegistrationTimer {
+    [self.reRegistrationTimer invalidate];
+    self.reRegistrationTimer = nil;
 }
 
-- (BOOL)windowShouldClose:(id)sender {
-    BOOL result = YES;
-    
-    if (sender == [self window]) {
-        [[self window] orderOut:self];
-        result = NO;
-    }
-    
-    return result;
+#pragma mark - AccountWindowControllerDelegate
+
+- (void)accountWindowController:(AccountWindowController *)controller didChangeAccountState:(AccountWindowControllerAccountState)state {
+    [self changeAccountState:state];
 }
 
 
-#pragma mark -
-#pragma mark AKSIPAccountDelegate
+#pragma mark - AKSIPAccountDelegate
 
 // When account registration changes, make appropriate modifications to the UI. A call can also be made from here if
 // the user called from the Address Book or from the application URL handler.
@@ -665,11 +507,8 @@ static NSArray<NSLayoutConstraint *> *FullSizeConstraintsForView(NSView *view);
     }
     
     if ([[self account] isRegistered]) {
-        if ([self reRegistrationTimer] != nil) {
-            [[self reRegistrationTimer] invalidate];
-            [self setReRegistrationTimer:nil];
-        }
-        
+        [self invalidateReRegistrationTimer];
+
         // If the account was offline and the user chose Unavailable state, -unregisterAccount will add the account
         // to the user agent. User agent will register the account. Set the account to Unavailable (unregister it) here.
         if ([self attemptingToUnregisterAccount]) {
@@ -703,7 +542,7 @@ static NSArray<NSLayoutConstraint *> *FullSizeConstraintsForView(NSView *view);
             [[[self authenticationFailureController] usernameField] setStringValue:[[self account] username]];
             [[[self authenticationFailureController] passwordField] setStringValue:password];
 
-            [[self window] beginSheet:[[self authenticationFailureController] window] completionHandler:nil];
+            [[self windowController] beginSheet:[[self authenticationFailureController] window]];
 
         } else if (([[self account] registrationStatus] / 100 != 2) &&
                    ([[self account] registrationExpireTime] < 0)) {
@@ -716,8 +555,7 @@ static NSArray<NSLayoutConstraint *> *FullSizeConstraintsForView(NSView *view);
                     NSString *statusText;
                     NSString *preferredLocalization = [[NSBundle mainBundle] preferredLocalizations][0];
                     if ([preferredLocalization isEqualToString:kRussian]) {
-                        statusText = [(AppController *)[NSApp delegate] localizedStringForSIPResponseCode:
-                                      [[self account] registrationStatus]];
+                        statusText = LocalizedStringForSIPResponseCode([[self account] registrationStatus]);
                     } else {
                         statusText = [[self account] registrationStatusText];
                     }
@@ -758,10 +596,7 @@ static NSArray<NSLayoutConstraint *> *FullSizeConstraintsForView(NSView *view);
 }
 
 - (void)SIPAccountWillRemove:(AKSIPAccount *)account {
-    if ([self reRegistrationTimer] != nil) {
-        [[self reRegistrationTimer] invalidate];
-        [self setReRegistrationTimer:nil];
-    }
+    [self invalidateReRegistrationTimer];
 }
 
 - (void)SIPAccount:(AKSIPAccount *)account didReceiveCall:(AKSIPCall *)aCall {
@@ -782,13 +617,9 @@ static NSArray<NSLayoutConstraint *> *FullSizeConstraintsForView(NSView *view);
         }
     }
     
-    [self.musicPlayer pause];
-    
     CallController *aCallController = [[CallController alloc] initWithWindowNibName:@"Call"
                                                                   accountController:self
                                                                           userAgent:self.userAgent
-                                                                   ringtonePlayback:self.ringtonePlayback
-                                                                        musicPlayer:self.musicPlayer
                                                                            delegate:self];
     
     [aCallController setCall:aCall];
@@ -964,7 +795,7 @@ static NSArray<NSLayoutConstraint *> *FullSizeConstraintsForView(NSView *view);
     
     // Address Book search ends here.
     
-    [[aCallController window] setTitle:([[aCall remoteURI] SIPAddress] ?: @"")];
+    [aCallController setTitle:([[aCall remoteURI] SIPAddress] ?: @"")];
     [aCallController setDisplayedName:finalDisplayedName];
     [aCallController setStatus:finalStatus];
     [aCallController setRedialURI:[aCall remoteURI]];
@@ -1021,12 +852,12 @@ static NSArray<NSLayoutConstraint *> *FullSizeConstraintsForView(NSView *view);
     }
     
     NSUserNotification *userNotification = [[NSUserNotification alloc] init];
+    userNotification.identifier = aCallController.identifier;
     userNotification.title = notificationTitle;
     userNotification.informativeText = notificationDescription;
     userNotification.actionButtonTitle = NSLocalizedString(@"Answer", @"Call answer button.");
     NSString *decline = NSLocalizedString(@"Decline", @"Call decline button.");
     userNotification.additionalActions = @[[NSUserNotificationAction actionWithIdentifier:@"decline" title:decline]];
-    userNotification.userInfo = @{kUserNotificationCallControllerIdentifierKey: aCallController.identifier};
     [[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:userNotification];
 
     [self startPlayingRingtoneOrLogError];
@@ -1043,8 +874,7 @@ static NSArray<NSLayoutConstraint *> *FullSizeConstraintsForView(NSView *view);
 }
 
 
-#pragma mark -
-#pragma mark CallControllerDelegate
+#pragma mark - CallControllerDelegate
 
 - (void)callControllerWillClose:(CallController *)callController {
     [self.callControllers removeObject:callController];
@@ -1052,8 +882,7 @@ static NSArray<NSLayoutConstraint *> *FullSizeConstraintsForView(NSView *view);
 }
 
 
-#pragma mark -
-#pragma mark AKSIPUserAgent notifications
+#pragma mark - AKSIPUserAgent notifications
 
 - (void)SIPUserAgentDidFinishStarting:(NSNotification *)notification {
     if (![[notification object] isStarted]) {
@@ -1070,8 +899,7 @@ static NSArray<NSLayoutConstraint *> *FullSizeConstraintsForView(NSView *view);
 }
 
 
-#pragma mark -
-#pragma mark AKNetworkReachability notifications
+#pragma mark - AKNetworkReachability notifications
 
 // This is the moment when the application starts doing its main job.
 - (void)networkReachabilityDidBecomeReachable:(NSNotification *)notification {
@@ -1081,11 +909,3 @@ static NSArray<NSLayoutConstraint *> *FullSizeConstraintsForView(NSView *view);
 }
 
 @end
-
-static NSArray<NSLayoutConstraint *> *FullSizeConstraintsForView(NSView *view) {
-    NSMutableArray<NSLayoutConstraint *> *result = [NSMutableArray array];
-    NSDictionary *views = @{@"view": view};
-    [result addObjectsFromArray:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[view]|" options:0 metrics:nil views:views]];
-    [result addObjectsFromArray:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|[view]|" options:0 metrics:nil views:views]];
-    return result;
-}

@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -19,8 +19,8 @@
 import Foundation
 
 final class SimpleApplicationDataLocations {
-    fileprivate let manager: FileManager
-    fileprivate let bundle: Bundle
+    private let manager: FileManager
+    private let bundle: Bundle
 
     init(manager: FileManager, bundle: Bundle) {
         self.manager = manager
@@ -29,16 +29,16 @@ final class SimpleApplicationDataLocations {
 }
 
 extension SimpleApplicationDataLocations: ApplicationDataLocations {
+    func root() -> URL {
+        return applicationSupport().appendingPathComponent(bundle.bundleIdentifier!, isDirectory: true)
+    }
+
     func logs() -> URL {
-        return root()
+        return root().appendingPathComponent("Logs", isDirectory: true)
     }
 
     func callHistories() -> URL {
         return root().appendingPathComponent("CallHistories", isDirectory: true)
-    }
-
-    private func root() -> URL {
-        return applicationSupport().appendingPathComponent(bundle.bundleIdentifier!, isDirectory: true)
     }
 
     private func applicationSupport() -> URL {

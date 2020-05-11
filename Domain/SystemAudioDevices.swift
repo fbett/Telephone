@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -26,8 +26,8 @@ public struct SystemAudioDevices {
 
     public init(devices: [SystemAudioDevice]) {
         self.all = devices
-        input = devices.filter({ $0.hasInputs })
-        output = devices.filter({ $0.hasOutputs })
+        input = devices.filter { $0.hasInputs }
+        output = devices.filter { $0.hasOutputs }
         deviceNameToInputDevice = deviceNameToDeviceMap(from: input)
         deviceNameToOutputDevice = deviceNameToDeviceMap(from: output)
     }
@@ -42,9 +42,5 @@ public struct SystemAudioDevices {
 }
 
 private func deviceNameToDeviceMap(from devices: [SystemAudioDevice]) -> [String: SystemAudioDevice] {
-    var result = [String: SystemAudioDevice]()
-    for device in devices {
-        result[device.name] = device
-    }
-    return result
+    return devices.reduce(into: [:]) { $0[$1.name] = $1 }
 }

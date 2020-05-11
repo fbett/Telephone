@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 import UseCases
 
 final class SettingsAccounts {
-    fileprivate let settings: KeyValueSettings
+    private let settings: KeyValueSettings
 
     init(settings: KeyValueSettings) {
         self.settings = settings
@@ -31,7 +31,7 @@ extension SettingsAccounts: Accounts {
         return accounts().map({ SettingsAccount(dict: $0) }).filter({ $0.isEnabled }).count > 0
     }
 
-    fileprivate func accounts() -> [[String: Any]] {
+    private func accounts() -> [[String: Any]] {
         return settings.array(forKey: kAccounts) as? [[String: Any]] ?? []
     }
 }

@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -29,9 +29,9 @@ final class AsyncCallHistoryViewEventTargetFactory: NSObject {
         self.main = main
     }
 
-    func make(account: Account, view: CallHistoryView, completion: @escaping (CallHistoryViewEventTarget) -> ()) {
+    @objc func make(account: Account, view: CallHistoryView, purchaseCheck: UseCase, completion: @escaping (CallHistoryViewEventTarget) -> Void) {
         background.add {
-            let result = self.origin.make(account: account, view: view)
+            let result = self.origin.make(account: account, view: view, purchaseCheck: purchaseCheck)
             self.main.add {
                 completion(result)
             }

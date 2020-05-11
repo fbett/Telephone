@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -22,9 +22,9 @@ public protocol ProductsFetchUseCaseOutput: class {
 }
 
 public final class ProductsFetchUseCase {
-    fileprivate let products: Products
-    fileprivate let targets: ProductsEventTargets
-    fileprivate let output: ProductsFetchUseCaseOutput
+    private let products: Products
+    private let targets: ProductsEventTargets
+    private let output: ProductsFetchUseCaseOutput
 
     public init(products: Products, targets: ProductsEventTargets, output: ProductsFetchUseCaseOutput) {
         self.products = products

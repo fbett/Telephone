@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -19,22 +19,48 @@
 import Foundation
 
 public final class URI: NSObject {
-    public let user: String
-    public let host: String
-    public let displayName: String
+    @objc public let user: String
+    @objc public let address: ServiceAddress
+    @objc public let displayName: String
 
-    public init(user: String, host: String, displayName: String) {
+    @objc public var host: String { return address.host }
+    @objc public var port: String { return address.port }
+
+    @objc public var stringValue: String {
+        let a = user.isEmpty ? "\(address)" : "\(user)@\(address)"
+        return displayName.isEmpty ? "sip:\(a)" : "\"\(displayName)\" <sip:\(a)>"
+    }
+
+    public override var description: String { return stringValue }
+
+    @objc public init(user: String, address: ServiceAddress, displayName: String) {
         self.user = user
-        self.host = host
+        self.address = address
         self.displayName = displayName
     }
 
-    public override var description: String {
-        if !displayName.isEmpty {
-            return "\"\(displayName)\" <sip:\(user)@\(host)>"
-        } else {
-            return "<sip:\(user)@\(host)>"
-        }
+    @objc public convenience init(user: String, host: String, displayName: String) {
+        self.init(user: user, address: ServiceAddress(host: host), displayName: displayName)
+    }
+
+    @objc public convenience init(address: ServiceAddress) {
+        self.init(user: "", address: address, displayName: "")
+    }
+
+    @objc public convenience init(host: String, port: String) {
+        self.init(address: ServiceAddress(host: host, port: port))
+    }
+
+    @objc public convenience init(host: String) {
+        self.init(address: ServiceAddress(host: host))
+    }
+
+    @objc(URIWithHost:port:) public class func uri(host: String, port: String) -> URI {
+        return URI(host: host, port: port)
+    }
+
+    @objc(URIWithHost:) public class func uri(host: String) -> URI {
+        return URI(host: host)
     }
 }
 
@@ -45,10 +71,14 @@ extension URI {
     }
 
     public override var hash: Int {
-        return user.hash ^ host.hash ^ displayName.hash
+        var hasher = Hasher()
+        hasher.combine(user)
+        hasher.combine(address)
+        hasher.combine(displayName)
+        return hasher.finalize()
     }
 
     private func isEqual(to uri: URI) -> Bool {
-        return user == uri.user && host == uri.host && displayName == uri.displayName
+        return user == uri.user && address == uri.address && displayName == uri.displayName
     }
 }

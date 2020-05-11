@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -16,47 +16,41 @@
 //  GNU General Public License for more details.
 //
 
+import Domain
 import DomainTestDoubles
 @testable import UseCases
 import UseCasesTestDoubles
 import XCTest
 
 final class SettingsRingtoneSoundConfigurationLoadUseCaseTests: XCTestCase {
-    private var factory: SystemAudioDeviceTestFactory!
-    private var settings: SettingsFake!
-    private var repository: SystemAudioDeviceRepositoryStub!
-    private var sut: SoundConfigurationLoadUseCase!
+    func testResultNameIsRingingSoundFromSettingsAndDeviceUIDIsUniqueIdentifierOfRingtoneOutputFromSoundIO() throws {
+        let sound = "any-sound"
+        let output = SystemAudioDeviceTestFactory().someOutput
+        let settings = SettingsFake()
+        settings[SettingsKeys.ringingSound] = sound
+        settings[SettingsKeys.ringtoneOutput] = output.name
+        let sut = SettingsRingtoneSoundConfigurationLoadUseCase(
+            settings: settings,
+            factory: SoundIOFactoryStub(
+                soundIO: SimpleSoundIO(
+                    input: NullSystemAudioDevice(), output: NullSystemAudioDevice(), ringtoneOutput: output
+                )
+            )
+        )
 
-    override func setUp() {
-        super.setUp()
-        factory = SystemAudioDeviceTestFactory()
-        settings = SettingsFake()
-        repository = SystemAudioDeviceRepositoryStub()
-        sut = SettingsRingtoneSoundConfigurationLoadUseCase(settings: settings, repository: repository)
-    }
+        let result = try sut.execute()
 
-    func testReturnsRingtoneSoundConfigurationFromSettings() {
-        let outputDevice = factory.someOutput
-        settings[SettingsKeys.ringtoneOutput] = outputDevice.name
-        settings[SettingsKeys.ringingSound] = "sound-name"
-        repository.allDevicesResult = factory.all
-
-        let result = try! sut.execute()
-
-        XCTAssertEqual(result.name, "sound-name")
-        XCTAssertEqual(result.deviceUID, outputDevice.uniqueIdentifier)
+        XCTAssertEqual(result.name, sound)
+        XCTAssertEqual(result.deviceUID, output.uniqueIdentifier)
     }
 
     func testThrowsRingtoneSoundNameNotFoundErrorWhenSoundNameCanNotBeFoundInSettings() {
-        repository.allDevicesResult = factory.all
-        var result = false
+        let sut = SettingsRingtoneSoundConfigurationLoadUseCase(
+            settings: SettingsFake(), factory: SoundIOFactoryStub(soundIO: NullSoundIO())
+        )
 
-        do {
-            try _ = sut.execute()
-        } catch UseCasesError.ringtoneSoundNameNotFoundError {
-            result = true
-        } catch {}
-
-        XCTAssertTrue(result)
+        XCTAssertThrowsError(try sut.execute()) { (error) in
+            XCTAssertEqual(error as? UseCasesError, .ringtoneSoundNameNotFoundError)
+        }
     }
 }

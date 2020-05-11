@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -42,13 +42,18 @@
 @property(nonatomic, weak) IBOutlet NSTextField *reregistrationTimeField;
 @property(nonatomic, weak) IBOutlet NSButton *substitutePlusCharacterCheckBox;
 @property(nonatomic, weak) IBOutlet NSTextField *plusCharacterSubstitutionField;
+@property(nonatomic, weak) IBOutlet NSTextField *plusCharacterSubstitutionLabel;
 @property(nonatomic, weak) IBOutlet NSButton *useProxyCheckBox;
 @property(nonatomic, weak) IBOutlet NSTextField *proxyHostField;
 @property(nonatomic, weak) IBOutlet NSTextField *proxyPortField;
 @property(nonatomic, weak) IBOutlet NSTextField *SIPAddressField;
 @property(nonatomic, weak) IBOutlet NSTextField *registrarField;
 @property(nonatomic, weak) IBOutlet NSTextField *cantEditAccountLabel;
-@property(nonatomic, weak) IBOutlet NSButton *updateHeadersCheckBox;
+@property(nonatomic, weak) IBOutlet NSButton *UDPButton;
+@property(nonatomic, weak) IBOutlet NSButton *TCPButton;
+@property(nonatomic, weak) IBOutlet NSButton *IPv4Button;
+@property(nonatomic, weak) IBOutlet NSButton *IPv6Button;
+@property(nonatomic, weak) IBOutlet NSButton *updateIPAddressCheckBox;
 
 // Raises |Add Account| sheet.
 - (IBAction)showAddAccountSheet:(id)sender;
@@ -70,5 +75,9 @@
 
 // Enables or disables proxy usage for an account.
 - (IBAction)changeUseProxy:(id)sender;
+
+// Used only for grouping radio buttons.
+- (IBAction)changeTransport:(id)sender;
+- (IBAction)changeIPVersion:(id)sender;
 
 @end

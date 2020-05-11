@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -20,26 +20,26 @@ import XCTest
 
 final class WorkspaceSleepStatusTests: XCTestCase {
     func testIsNotSleepingAfterCreation() {
-        let sut = WorkspaceSleepStatus(workspace: NSWorkspace.shared())
+        let sut = WorkspaceSleepStatus(workspace: NSWorkspace.shared)
 
         XCTAssertFalse(sut.isSleeping)
     }
 
     func testIsSleepingAfterWillSleepNotification() {
-        let sut = WorkspaceSleepStatus(workspace: NSWorkspace.shared())
-        let nc = NSWorkspace.shared().notificationCenter
+        let sut = WorkspaceSleepStatus(workspace: NSWorkspace.shared)
+        let nc = NSWorkspace.shared.notificationCenter
 
-        nc.post(name: .NSWorkspaceWillSleep, object: NSWorkspace.shared())
+        nc.post(name: NSWorkspace.willSleepNotification, object: NSWorkspace.shared)
 
         XCTAssertTrue(sut.isSleeping)
     }
 
     func testIsNotSleepingAfterDidWakeNotification() {
-        let sut = WorkspaceSleepStatus(workspace: NSWorkspace.shared())
-        let nc = NSWorkspace.shared().notificationCenter
+        let sut = WorkspaceSleepStatus(workspace: NSWorkspace.shared)
+        let nc = NSWorkspace.shared.notificationCenter
 
-        nc.post(name: .NSWorkspaceWillSleep, object: NSWorkspace.shared())
-        nc.post(name: .NSWorkspaceDidWake, object: NSWorkspace.shared())
+        nc.post(name: NSWorkspace.willSleepNotification, object: NSWorkspace.shared)
+        nc.post(name: NSWorkspace.didWakeNotification, object: NSWorkspace.shared)
 
         XCTAssertFalse(sut.isSleeping)
     }

@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -17,9 +17,9 @@
 //
 
 public final class TruncatingCallHistory {
-    fileprivate var records = [CallHistoryRecord]()
+    private var records = [CallHistoryRecord]()
 
-    fileprivate let limit: Int
+    private let limit: Int
 
     public init(limit: Int = 100) {
         self.limit = limit
@@ -39,7 +39,7 @@ extension TruncatingCallHistory: CallHistory {
     }
 
     public func remove(_ record: CallHistoryRecord) {
-        if let index = records.index(of: record) {
+        if let index = records.firstIndex(of: record) {
             records.remove(at: index)
         }
     }

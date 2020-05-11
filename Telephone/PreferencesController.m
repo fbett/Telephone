@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -114,7 +114,7 @@
 
 - (instancetype)initWithDelegate:(id<PreferencesControllerDelegate>)delegate
                        userAgent:(AKSIPUserAgent *)userAgent
- soundPreferencesViewEventTarget:(id<SoundPreferencesViewEventTarget>)soundPreferencesViewEventTarget {
+ soundPreferencesViewEventTarget:(SoundPreferencesViewEventTarget *)soundPreferencesViewEventTarget {
     if ((self = [super initWithWindowNibName:@"Preferences"])) {
         self.delegate = delegate;
         _userAgent = userAgent;
@@ -181,6 +181,18 @@
     if ([firstResponderView acceptsFirstResponder]) {
         [[self window] makeFirstResponder:firstResponderView];
     }
+}
+
+- (void)showWindowCentered {
+    if (!self.window.isVisible) {
+        [self.window center];
+    }
+    [self showWindow:self];
+}
+
+- (void)showAccounts {
+    self.toolbar.selectedItemIdentifier = self.accountsToolbarItem.itemIdentifier;
+    [self changeView:self.accountsToolbarItem];
 }
 
 - (BOOL)isNetworkPreferencesViewCurrent {

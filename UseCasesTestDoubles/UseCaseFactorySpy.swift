@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -16,15 +16,16 @@
 //  GNU General Public License for more details.
 //
 
+import Domain
 import UseCases
 
 public final class UseCaseFactorySpy {
-    public fileprivate(set) var invokedSoundIO = PresentationSoundIO(input: "", output: "", ringtoneOutput: "")
-    public fileprivate(set) var invokedRingtoneSoundName = ""
+    public private(set) var invokedSoundIO: SystemDefaultingSoundIO?
+    public private(set) var invokedRingtoneSoundName: String?
 
-    fileprivate var soundIOLoad: ThrowingUseCase!
-    fileprivate var soundIOSave: UseCase!
-    fileprivate var ringtoneSoundNameSave: UseCase!
+    private var soundIOLoad: ThrowingUseCase!
+    private var soundIOSave: UseCase!
+    private var ringtoneSoundNameSave: UseCase!
 
     public init() {}
 
@@ -46,7 +47,7 @@ extension UseCaseFactorySpy: UseCaseFactory {
         return soundIOLoad
     }
 
-    public func makeSettingsSoundIOSaveUseCase(soundIO: PresentationSoundIO) -> UseCase {
+    public func makeSettingsSoundIOSaveUseCase(soundIO: SystemDefaultingSoundIO) -> UseCase {
         invokedSoundIO = soundIO
         return soundIOSave
     }

@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -18,14 +18,9 @@
 
 import Foundation
 
-public protocol PurchaseCheckUseCaseOutput {
-    func didCheckPurchase(expiration: Date)
-    func didFailCheckingPurchase()
-}
-
 public final class PurchaseCheckUseCase {
-    fileprivate let receipt: Receipt
-    fileprivate let output: PurchaseCheckUseCaseOutput
+    private let receipt: Receipt
+    private let output: PurchaseCheckUseCaseOutput
 
     public init(receipt: Receipt, output: PurchaseCheckUseCaseOutput) {
         self.receipt = receipt

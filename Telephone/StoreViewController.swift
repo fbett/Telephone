@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -22,35 +22,42 @@ import UseCases
 final class StoreViewController: NSViewController {
     private var target: StoreViewEventTarget
     private var workspace: NSWorkspace
-    fileprivate dynamic var products: [PresentationProduct] = []
-    fileprivate let formatter: DateFormatter = {
+    @objc private dynamic var products: [PresentationProduct] = []
+    private let formatter: DateFormatter = {
         let f = DateFormatter()
         f.dateStyle = .short
         return f
     }()
 
     @IBOutlet private var productsTableView: NSTableView!
-    @IBOutlet fileprivate var productsListView: NSView!
-    @IBOutlet fileprivate var productsFetchErrorView: NSView!
-    @IBOutlet fileprivate var progressView: NSView!
-    @IBOutlet fileprivate var purchasedView: NSView!
-    @IBOutlet fileprivate var restorePurchasesButton: NSButton!
-    @IBOutlet fileprivate var refreshReceiptButton: NSButton!
-    @IBOutlet fileprivate var subscriptionsButton: NSButton!
+    @IBOutlet private var productsListView: NSView!
+    @IBOutlet private var productsFetchErrorView: NSView!
+    @IBOutlet private var progressView: NSView!
+    @IBOutlet private var purchasedView: NSView!
+    @IBOutlet private var termsOfUseField: NSTextField!
+    @IBOutlet private var privacyPolicyField: NSTextField!
+    @IBOutlet private var restorePurchasesButton: NSButton!
+    @IBOutlet private var refreshReceiptButton: NSButton!
+    @IBOutlet private var subscriptionsButton: NSButton!
 
-    @IBOutlet fileprivate weak var productsContentView: NSView!
-    @IBOutlet fileprivate weak var productsFetchErrorField: NSTextField!
-    @IBOutlet fileprivate weak var progressIndicator: NSProgressIndicator!
-    @IBOutlet fileprivate weak var expirationField: NSTextField!
+    @IBOutlet private weak var productsContentView: NSView!
+    @IBOutlet private weak var productsFetchErrorField: NSTextField!
+    @IBOutlet private weak var progressIndicator: NSProgressIndicator!
+    @IBOutlet private weak var expirationField: NSTextField!
 
     init(target: StoreViewEventTarget, workspace: NSWorkspace) {
         self.target = target
         self.workspace = workspace
-        super.init(nibName: "StoreViewController", bundle: nil)!
+        super.init(nibName: "StoreViewController", bundle: nil)
     }
 
     required init?(coder: NSCoder) {
         fatalError()
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        makeHyperlinks()
     }
 
     override func viewDidAppear() {
@@ -76,7 +83,7 @@ final class StoreViewController: NSViewController {
 
     @IBAction func refreshReceipt(_ sender: NSButton) {
         makeReceiptRefreshAlert().beginSheetModal(for: view.window!) { response in
-            if response == NSAlertFirstButtonReturn {
+            if response == .alertFirstButtonReturn {
                 self.target.didStartReceiptRefresh()
             }
         }
@@ -84,6 +91,11 @@ final class StoreViewController: NSViewController {
 
     @IBAction func manageSubscriptions(_ sender: NSButton) {
         workspace.open(URL(string: "https://buy.itunes.apple.com/WebObjects/MZFinance.woa/wa/manageSubscriptions")!)
+    }
+
+    private func makeHyperlinks() {
+        makeHyperlink(from: termsOfUseField, url: URL(string: "https://www.64characters.com/terms-and-conditions/")!)
+        makeHyperlink(from: privacyPolicyField, url: URL(string: "https://www.64characters.com/privacy/")!)
     }
 }
 
@@ -186,5 +198,15 @@ private func makeReceiptRefreshAlert() -> NSAlert {
     result.addButton(withTitle: NSLocalizedString("Quit and Refresh", comment: "Receipt refresh alert button."))
     result.addButton(withTitle: NSLocalizedString("Cancel", comment: "Cancel button."))
     result.buttons[1].keyEquivalent = "\u{1b}"
+    return result
+}
+
+private func makeHyperlink(from field: NSTextField, url: URL) {
+    field.attributedStringValue = makeHyperlink(from: field.attributedStringValue, url: url)
+}
+
+private func makeHyperlink(from string: NSAttributedString, url: URL) -> NSAttributedString {
+    let result = NSMutableAttributedString(attributedString: string)
+    result.addAttribute(.link, value: url, range: NSRange(location: 0, length: result.length))
     return result
 }

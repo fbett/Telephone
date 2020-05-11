@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -23,12 +23,12 @@ public protocol PurchaseReminderUseCaseOutput {
 }
 
 public final class PurchaseReminderUseCase: NSObject {
-    fileprivate let accounts: Accounts
-    fileprivate let receipt: Receipt
-    fileprivate let settings: PurchaseReminderSettings
-    fileprivate let now: Date
-    fileprivate let version: String
-    fileprivate let output: PurchaseReminderUseCaseOutput
+    private let accounts: Accounts
+    private let receipt: Receipt
+    private let settings: PurchaseReminderSettings
+    private let now: Date
+    private let version: String
+    private let output: PurchaseReminderUseCaseOutput
 
     public init(accounts: Accounts, receipt: Receipt, settings: PurchaseReminderSettings, now: Date, version: String, output: PurchaseReminderUseCaseOutput) {
         self.accounts = accounts

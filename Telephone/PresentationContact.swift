@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -20,16 +20,18 @@ import Cocoa
 import Foundation
 
 final class PresentationContact: NSObject {
-    let title: String
-    let tooltip: String
-    let label: String
-    let color: NSColor
+    @objc let title: String
+    @objc let tooltip: String
+    @objc let label: String
+    @objc let color: NSColor
+    let address: String
 
-    init(title: String, tooltip: String, label: String, color: NSColor) {
+    init(title: String, tooltip: String, label: String, color: NSColor, address: String) {
         self.title = title
         self.tooltip = tooltip
         self.label = label
         self.color = color
+        self.address = address
     }
 }
 
@@ -40,11 +42,21 @@ extension PresentationContact {
     }
 
     override var hash: Int {
-        return title.hash ^ tooltip.hash ^ label.hash ^ color.hash
+        var hasher = Hasher()
+        hasher.combine(title)
+        hasher.combine(tooltip)
+        hasher.combine(label)
+        hasher.combine(color)
+        hasher.combine(address)
+        return hasher.finalize()
     }
 
     private func isEqual(to contact: PresentationContact) -> Bool {
-        return title == contact.title && tooltip == contact.tooltip && label == contact.label && color == contact.color
+        return title == contact.title &&
+            tooltip == contact.tooltip &&
+            label == contact.label &&
+            color == contact.color &&
+            address == contact.address
     }
 }
 
@@ -53,15 +65,15 @@ extension PresentationContact {
         switch contact.address {
         case let .phone(number, label):
             if contact.name.isEmpty {
-                self.init(title: number, tooltip: "", label: label, color: color)
+                self.init(title: number, tooltip: "", label: label, color: color, address: number)
             } else {
-                self.init(title: contact.name, tooltip: number, label: label, color: color)
+                self.init(title: contact.name, tooltip: number, label: label, color: color, address: number)
             }
         case let .email(address, label):
             if contact.name.isEmpty {
-                self.init(title: address, tooltip: "", label: label, color: color)
+                self.init(title: address, tooltip: "", label: label, color: color, address: address)
             } else {
-                self.init(title: contact.name, tooltip: address, label: label, color: color)
+                self.init(title: contact.name, tooltip: address, label: label, color: color, address: address)
             }
         }
     }

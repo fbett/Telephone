@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -19,8 +19,8 @@
 import UseCases
 
 public final class SuccessfulFetchProductsFake {
-    fileprivate let origin: Products = SimpleProductsFake()
-    fileprivate let target: ProductsEventTarget
+    private let origin: Products = SimpleProductsFake()
+    private let target: ProductsEventTarget
 
     public init(target: ProductsEventTarget) {
         self.target = target

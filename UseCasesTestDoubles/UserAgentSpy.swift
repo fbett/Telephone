@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -16,29 +16,33 @@
 //  GNU General Public License for more details.
 //
 
-import Foundation
+import Domain
 import UseCases
 
-public final class UserAgentSpy: NSObject {
+public final class UserAgentSpy {
     public var isStarted = false
-    public fileprivate(set) var hasActiveCalls = false
+    public var maxCalls = 0
 
-    public fileprivate(set) var didCallAudioDevices = false
+    public var didCallStart = false
+
+    public private(set) var didCallAudioDevices = false
     public var audioDevicesResult = [UserAgentAudioDevice]()
 
-    public fileprivate(set) var didCallUpdateAudioDevices = false
-    public fileprivate(set) var soundIOSelectionCallCount = 0
+    public private(set) var didCallUpdateAudioDevices = false
+    public private(set) var soundIOSelectionCallCount = 0
     public var didSelectSoundIO: Bool { return soundIOSelectionCallCount > 0 }
 
-    public fileprivate(set) var invokedInputDeviceID: Int?
-    public fileprivate(set) var invokedOutputDeviceID: Int?
+    public private(set) var invokedInputDeviceID: Int?
+    public private(set) var invokedOutputDeviceID: Int?
 
-    public func simulateActiveCalls() {
-        hasActiveCalls = true
-    }
+    public init() {}
 }
 
 extension UserAgentSpy: UserAgent {
+    public func start() {
+        didCallStart = true
+    }
+
     public func audioDevices() throws -> [UserAgentAudioDevice] {
         didCallAudioDevices = true
         return audioDevicesResult

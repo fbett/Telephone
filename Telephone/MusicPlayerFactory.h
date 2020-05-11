@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -23,7 +23,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface MusicPlayerFactory : NSObject
 
-- (nullable id<MusicPlayer>)makeAppleMusicPlayer;
+- (nullable id<MusicPlayer>)makeiTunesMusicPlayer;
+- (nullable id<MusicPlayer>)makeMusicAppMusicPlayer;
 - (nullable id<MusicPlayer>)makeSpotifyMusicPlayer;
 
 @end

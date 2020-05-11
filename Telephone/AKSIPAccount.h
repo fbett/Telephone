@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -23,12 +23,20 @@
 
 #import "AKSIPAccountDelegate.h"
 
+@class PJSUACallInfo;
 
 NS_ASSUME_NONNULL_BEGIN
+
+// SIP transports.
+typedef NS_ENUM(NSInteger, AKSIPTransport) {
+    AKSIPTransportUDP,
+    AKSIPTransportTCP
+};
 
 // SIP account defaults.
 extern const NSInteger kAKSIPAccountDefaultSIPProxyPort;
 extern const NSInteger kAKSIPAccountDefaultReregistrationTime;
+extern const AKSIPTransport kAKSIPAccountDefaultTransport;
 
 @class AKSIPCall, AKSIPURI;
 
@@ -39,10 +47,9 @@ extern const NSInteger kAKSIPAccountDefaultReregistrationTime;
 // The receiver's delegate.
 @property(nonatomic, weak) id <AKSIPAccountDelegate> delegate;
 
-// The URI for SIP registration.
+// Full SIP URI for the account.
 // It is composed of |fullName| and |SIPAddress|, e.g. "John Smith" <john@company.com>
-// TODO(eofster): strange property. Do we need this?
-@property(nonatomic, readonly) AKSIPURI *registrationURI;
+@property(nonatomic, readonly) URI *uri;
 
 // Full name of the registration URI.
 @property(nonatomic, readonly) NSString *fullName;
@@ -51,7 +58,7 @@ extern const NSInteger kAKSIPAccountDefaultReregistrationTime;
 @property(nonatomic, readonly) NSString *SIPAddress;
 
 // Registrar.
-@property(nonatomic, readonly) NSString *registrar;
+@property(nonatomic, readonly) ServiceAddress *registrar;
 
 // Realm. Pass empty string to make a credential that can be used to authenticate against any challenges.
 @property(nonatomic, readonly) NSString *realm;
@@ -72,6 +79,12 @@ extern const NSInteger kAKSIPAccountDefaultReregistrationTime;
 // Default: 300 (sec).
 @property(nonatomic) NSUInteger reregistrationTime;
 
+// SIP transport.
+@property(nonatomic) AKSIPTransport transport;
+
+/// A Boolean value indicating if IPv6 should be used.
+@property(nonatomic) BOOL usesIPv6;
+
 /// A Boolean value indicating if Contact header should be automatically updated.
 ///
 /// When YES, the library will keep track of the public IP address from the response of the REGISTER request.
@@ -82,6 +95,11 @@ extern const NSInteger kAKSIPAccountDefaultReregistrationTime;
 /// When YES, the "sent-by" field of the Via header will be overwritten for outgoing messages with the same interface
 /// address as the one in the REGISTER request.
 @property(nonatomic) BOOL updatesViaHeader;
+
+/// A Boolean value indicating if IP address in SDP should be automatically updated.
+///
+/// When YES, and when STUN and ICE are disabled, then the IP address found in registration response will be used.
+@property(nonatomic) BOOL updatesSDP;
 
 // The receiver's identifier at the user agent.
 @property(nonatomic, readonly) NSInteger identifier;
@@ -108,6 +126,8 @@ extern const NSInteger kAKSIPAccountDefaultReregistrationTime;
 // Presence online status text.
 @property(nonatomic, readonly) NSString *onlineStatusText;
 
+@property(nonatomic, readonly) BOOL hasUnansweredIncomingCalls;
+
 @property(nonatomic) NSThread *thread;
 
 - (instancetype)initWithUUID:(NSString *)uuid
@@ -124,10 +144,11 @@ extern const NSInteger kAKSIPAccountDefaultReregistrationTime;
 // Makes a call to a given destination URI.
 - (void)makeCallTo:(AKSIPURI *)destination completion:(void (^)(AKSIPCall *))completion;
 
-- (AKSIPCall *)addCallWithIdentifier:(NSInteger)identifier;
+- (AKSIPCall *)addCallWithInfo:(PJSUACallInfo *)info;
 - (nullable AKSIPCall *)callWithIdentifier:(NSInteger)identifier;
 - (void)removeCall:(AKSIPCall *)call;
 - (void)removeAllCalls;
+- (NSInteger)activeCallsCount;
 
 @end
 

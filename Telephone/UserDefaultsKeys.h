@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -27,7 +27,6 @@ extern NSString * const kLogLevel;
 extern NSString * const kConsoleLogLevel;
 extern NSString * const kVoiceActivityDetection;
 extern NSString * const kTransportPort;
-extern NSString * const kTransportPublicHost;
 extern NSString * const kRingingSound;
 extern NSString * const kFormatTelephoneNumbers;
 extern NSString * const kTelephoneNumberFormatterSplitsLastFourDigits;
@@ -35,9 +34,11 @@ extern NSString * const kOutboundProxyHost;
 extern NSString * const kOutboundProxyPort;
 extern NSString * const kUseICE;
 extern NSString * const kUseDNSSRV;
+extern NSString * const kUseQoS;
 extern NSString * const kSignificantPhoneNumberLength;
 extern NSString * const kAutoCloseCallWindow;
 extern NSString * const kAutoCloseMissedCallWindow;
+extern NSString * const kKeepCallWindowOnTop;
 extern NSString * const kCallWaiting;
 extern NSString * const kUseG711Only;
 extern NSString * const kSettingsVersion;
@@ -59,5 +60,14 @@ extern NSString * const kPlusCharacterSubstitutionString;
 extern NSString * const kUseProxy;
 extern NSString * const kProxyHost;
 extern NSString * const kProxyPort;
+extern NSString * const kTransport;
+extern NSString * const kTransportUDP;
+extern NSString * const kTransportTCP;
+extern NSString * const kIPVersion;
+extern NSString * const kIPVersion4;
+extern NSString * const kIPVersion6;
 extern NSString * const kUpdateContactHeader;
 extern NSString * const kUpdateViaHeader;
+extern NSString * const kUpdateSDP;
+extern NSString * const kUseIPv6Only;
+extern NSString * const kLockCodec;

@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@ final class ASN1PayloadAttribute: NSObject {
     let type: Int
     let value: Data
 
-    init(type: Int, value: Data) {
+    @objc init(type: Int, value: Data) {
         self.type = type
         self.value = value
     }

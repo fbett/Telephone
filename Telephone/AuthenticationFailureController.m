@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 
 #import "AccountController.h"
 #import "AppController.h"
+#import "SIPResponseLocalization.h"
 
 
 NSString * const AKAuthenticationFailureControllerDidChangeUsernameAndPasswordNotification
@@ -40,11 +41,10 @@ NSString * const AKAuthenticationFailureControllerDidChangeUsernameAndPasswordNo
 }
 
 - (void)awakeFromNib {
-    NSString *registrar = [[[self accountController] account] registrar];
     [[self  informativeText] setStringValue:
      [NSString stringWithFormat:
       NSLocalizedString(@"Telephone was unable to login to %@. Change user name or password and try again.",
-                        @"Registrar authentication failed."), registrar]];
+                        @"Registrar authentication failed."), self.accountController.account.registrar]];
     
     NSString *username = [[[self accountController] account] username];
     NSString *service = [NSString stringWithFormat:@"SIP: %@", [[[self accountController] account] registrar]];
@@ -83,8 +83,7 @@ NSString * const AKAuthenticationFailureControllerDidChangeUsernameAndPasswordNo
             NSString *statusText;
             NSString *preferredLocalization = [[NSBundle mainBundle] preferredLocalizations][0];
             if ([preferredLocalization isEqualToString:@"ru"]) {
-                statusText = [(AppController *)[NSApp delegate] localizedStringForSIPResponseCode:
-                              [[[self accountController] account] registrationStatus]];
+                statusText = LocalizedStringForSIPResponseCode([[[self accountController] account] registrationStatus]);
             } else {
                 statusText = [[[self accountController] account] registrationStatusText];
             }

@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -23,9 +23,6 @@
 @interface NSString (AKStringScanningAdditions)
 
 // A Boolean value indicating whether the receiver consists only of a-z or A-Z.
-@property(nonatomic, readonly, assign) BOOL ak_hasLetters;
-
-// A Boolean value indicating whether the receiver is an IP address.
-@property(nonatomic, readonly, assign) BOOL ak_isIPAddress;
+@property(nonatomic, readonly) BOOL ak_hasLetters;
 
 @end

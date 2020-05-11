@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 
 import Foundation
 
-public struct Product {
+public struct Product: Hashable {
     public let identifier: String
     public let name: String
     public let price: Decimal
@@ -29,21 +29,6 @@ public struct Product {
         self.name = name
         self.price = price
         self.localizedPrice = localizedPrice
-    }
-}
-
-extension Product: Hashable {
-    public var hashValue: Int {
-        return identifier.hashValue ^ name.hashValue ^ price.hashValue ^ localizedPrice.hashValue
-    }
-}
-
-extension Product: Equatable {
-    public static func ==(lhs: Product, rhs: Product) -> Bool {
-        return lhs.identifier == rhs.identifier &&
-            lhs.name == rhs.name &&
-            lhs.price == rhs.price &&
-            lhs.localizedPrice == rhs.localizedPrice
     }
 }
 

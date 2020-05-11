@@ -1,4 +1,4 @@
-﻿/* Accounts preferences window title. */
+/* Accounts preferences window title. */
 "Accounts" = "Аккаунты";
 
 /* Address not found. */
@@ -9,6 +9,9 @@
 
 /* Call answer button. */
 "Answer" = "Ответить";
+
+/* Call history all records removal alert. */
+"Are you sure you want to delete all records?" = "Вы действительно хотите удалить все записи?";
 
 /* Call history record removal alert. */
 "Are you sure you want to delete the record “%@”?" = "Вы действительно хотите удалить запись «%@»?";
@@ -21,6 +24,9 @@
 
 /* Busy. */
 "busy" = "занято";
+
+/* Window title. */
+"Call" = "Звонок";
 
 /* Call declined. */
 "call declined" = "звонок отклонен";
@@ -103,7 +109,7 @@
 "mic unmuted" = "микрофон работает";
 
 /* Product name. */
-"Monthly optional patronage" = "Ежемесячная добровольная поддержка";
+"Monthly" = "Ежемесячно";
 
 /* Mute. Call menu item. */
 "Mute" = "Выключить микрофон";
@@ -153,6 +159,9 @@
 /* Network settings change confirmation. */
 "Save changes to the network settings?" = "Сохранить сетевые настройки?";
 
+/* Show more call history records button. */
+"Show %d more…" = "Показать еще %d…";
+
 /* Sound preferences window title. */
 "Sound" = "Звук";
 
@@ -163,13 +172,13 @@
 "Telephone was unable to login to %@. Change user name or password and try again." = "Телефон не смог зарегистрироваться на сервере %@. Проверьте имя пользователя и пароль.";
 
 /* Receipt refresh alert informative text. */
-"Telepohne will quit and the system will attempt to refresh the application receipt. After that, Telephone will be started again. You may be asked to enter your App Store credentials." = "Работа Телефона будет завершена, и система предпримет попытку обновить электронный чек приложения. После этого Телефон будет снова запущен. В процессе система может вас попросить залогиниться в Аппстор.";
+"Telepohne will quit and the system will attempt to refresh the application receipt. After that, Telephone will be started again. You may be asked to enter your App Store credentials." = "Работа Телефона будет завершена, и система предпримет попытку обновить электронный чек приложения, после чего Телефон будет снова запущен. Во время этого система может попросить вас залогиниться в Аппстор.";
 
 /* Error description. */
 "The error was: “%d %@”." = "%2$@, ошибка %1$d.";
 
 /* Call history record removal alert informative text. */
-"This action cannot be undone." = "Удаленная запись не может быть восстановлена.";
+"This action cannot be undone." = "Результат этого действия нельзя отменить.";
 
 /* Account removal confirmation informative text. */
 "This will delete your currently set up account “%@”." = "Настроенный аккаунт «%@» будет удален.";
@@ -192,5 +201,8 @@
 /* Unmute. Call menu item. */
 "Unmute" = "Включить микрофон";
 
+/* Audio device menu item. */
+"Use System Setting" = "Использовать системный";
+
 /* Product name. */
-"Yearly optional patronage" = "Ежегодная добровольная поддержка";
+"Yearly" = "Ежегодно";

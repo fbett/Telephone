@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -16,13 +16,9 @@
 //  GNU General Public License for more details.
 //
 
-public protocol CallHistoryRecordGetAllUseCaseOutput {
-    func update(records: [CallHistoryRecord])
-}
-
 public final class CallHistoryRecordGetAllUseCase {
-    fileprivate let history: CallHistory
-    fileprivate let output: CallHistoryRecordGetAllUseCaseOutput
+    private let history: CallHistory
+    private let output: CallHistoryRecordGetAllUseCaseOutput
 
     public init(history: CallHistory, output: CallHistoryRecordGetAllUseCaseOutput) {
         self.history = history

@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -19,12 +19,12 @@
 import Domain
 
 public final class SettingsRingtoneSoundConfigurationLoadUseCase {
-    fileprivate let settings: KeyValueSettings
-    fileprivate let repository: SystemAudioDeviceRepository
+    private let settings: KeyValueSettings
+    private let factory: SoundIOFactory
 
-    public init(settings: KeyValueSettings, repository: SystemAudioDeviceRepository) {
+    public init(settings: KeyValueSettings, factory: SoundIOFactory) {
         self.settings = settings
-        self.repository = repository
+        self.factory = factory
     }
 }
 
@@ -42,9 +42,6 @@ extension SettingsRingtoneSoundConfigurationLoadUseCase: SoundConfigurationLoadU
     }
 
     private func ringtoneAudioDeviceUID() throws -> String {
-        let soundIO = PreferredSoundIO(
-            devices: SystemAudioDevices(devices: try repository.allDevices()), settings: settings
-        )
-        return soundIO.ringtoneOutput.uniqueIdentifier
+        return try factory.make().ringtoneOutput.uniqueIdentifier
     }
 }

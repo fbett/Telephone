@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -22,8 +22,11 @@ final class CallHistoryViewEventTargetFactory {
     private let histories: CallHistories
     private let index: ContactMatchingIndex
     private let settings: ContactMatchingSettings
+    private let receipt: Receipt
     private let dateFormatter: DateFormatter
     private let durationFormatter: DateComponentsFormatter
+    private let storeEventTargets: StoreEventTargets
+    private let dayChangeEventTargets: DayChangeEventTargets
     private let background: ExecutionQueue
     private let main: ExecutionQueue
 
@@ -31,21 +34,27 @@ final class CallHistoryViewEventTargetFactory {
         histories: CallHistories,
         index: ContactMatchingIndex,
         settings: ContactMatchingSettings,
+        receipt: Receipt,
         dateFormatter: DateFormatter,
         durationFormatter: DateComponentsFormatter,
+        storeEventTargets: StoreEventTargets,
+        dayChangeEventTargets: DayChangeEventTargets,
         background: ExecutionQueue,
         main: ExecutionQueue
         ) {
         self.histories = histories
         self.index = index
         self.settings = settings
+        self.receipt = receipt
         self.dateFormatter = dateFormatter
         self.durationFormatter = durationFormatter
+        self.storeEventTargets = storeEventTargets
+        self.dayChangeEventTargets = dayChangeEventTargets
         self.background = background
         self.main = main
     }
 
-    func make(account: Account, view: CallHistoryView) -> CallHistoryViewEventTarget {
+    func make(account: Account, view: CallHistoryView, purchaseCheck: UseCase) -> CallHistoryViewEventTarget {
         let history = histories.history(withUUID: account.uuid)
         let factory = FallingBackMatchedContactFactory(
             matching: IndexedContactMatching(index: index, settings: settings, domain: account.domain)
@@ -57,14 +66,21 @@ final class CallHistoryViewEventTargetFactory {
                     output: ContactCallHistoryRecordGetAllUseCase(
                         factory: factory,
                         output: EnqueuingContactCallHistoryRecordGetAllUseCaseOutput(
-                            origin: CallHistoryViewPresenter(
-                                view: view, dateFormatter: dateFormatter, durationFormatter: durationFormatter
+                            origin: ReceiptValidatingContactCallHistoryRecordGetAllUseCaseOutput(
+                                origin: CallHistoryViewPresenter(
+                                    view: view, dateFormatter: dateFormatter, durationFormatter: durationFormatter
+                                ),
+                                receipt: receipt
                             ),
                             queue: main
                         )
                     )
                 ),
                 queue: background
+            ),
+            purchaseCheck: purchaseCheck,
+            recordRemoveAll: EnqueuingUseCase(
+                origin: CallHistoryRecordRemoveAllUseCase(history: history), queue: background
             ),
             recordRemove: EnqueueingCallHistoryRecordRemoveUseCaseFactory(
                 origin: DefaultCallHistoryRecordRemoveUseCaseFactory(history: history), queue: background
@@ -76,6 +92,8 @@ final class CallHistoryViewEventTargetFactory {
         history.updateTarget(
             EnqueuingCallHistoryEventTarget(origin: WeakCallHistoryEventTarget(origin: result), queue: main)
         )
+        storeEventTargets.add(WeakStoreEventTarget(origin: result))
+        dayChangeEventTargets.add(WeakDayChangeEventTarget(origin: result))
         return result
     }
 }

@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -16,11 +16,13 @@
 //  GNU General Public License for more details.
 //
 
-public final class SettingsSoundIOSaveUseCase {
-    fileprivate let soundIO: PresentationSoundIO
-    fileprivate let settings: KeyValueSettings
+import Domain
 
-    public init(soundIO: PresentationSoundIO, settings: KeyValueSettings) {
+public final class SettingsSoundIOSaveUseCase {
+    private let soundIO: SystemDefaultingSoundIO
+    private let settings: KeyValueSettings
+
+    public init(soundIO: SystemDefaultingSoundIO, settings: KeyValueSettings) {
         self.soundIO = soundIO
         self.settings = settings
     }
@@ -28,26 +30,19 @@ public final class SettingsSoundIOSaveUseCase {
 
 extension SettingsSoundIOSaveUseCase: UseCase {
     public func execute() {
-        saveInputIfNeeded()
-        saveOutputIfNeeded()
-        saveRingtoneOutputIfNeeded()
+        settings[SettingsKeys.soundInput] = soundIO.input.name
+        settings[SettingsKeys.soundOutput] = soundIO.output.name
+        settings[SettingsKeys.ringtoneOutput] = soundIO.ringtoneOutput.name
     }
+}
 
-    private func saveInputIfNeeded() {
-        if !soundIO.input.isEmpty {
-            settings[SettingsKeys.soundInput] = soundIO.input
-        }
-    }
-
-    private func saveOutputIfNeeded() {
-        if !soundIO.output.isEmpty {
-            settings[SettingsKeys.soundOutput] = soundIO.output
-        }
-    }
-
-    private func saveRingtoneOutputIfNeeded() {
-        if !soundIO.ringtoneOutput.isEmpty {
-            settings[SettingsKeys.ringtoneOutput] = soundIO.ringtoneOutput
+private extension SystemDefaultingSoundIO.Item {
+    var name: String? {
+        switch self {
+        case .systemDefault:
+            return nil
+        case .device(name: let name):
+            return name
         }
     }
 }

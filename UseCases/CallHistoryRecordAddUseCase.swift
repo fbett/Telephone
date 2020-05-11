@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -17,9 +17,9 @@
 //
 
 public final class CallHistoryRecordAddUseCase {
-    fileprivate let history: CallHistory
-    fileprivate let record: CallHistoryRecord
-    fileprivate let domain: String
+    private let history: CallHistory
+    private let record: CallHistoryRecord
+    private let domain: String
 
     public init(history: CallHistory, record: CallHistoryRecord, domain: String) {
         self.history = history
@@ -42,6 +42,6 @@ extension CallHistoryRecordAddUseCase: UseCase {
     }
 
     private func shouldRemoveHost(from record: CallHistoryRecord) -> Bool {
-        return record.uri.host == domain || record.uri.user.isTelephoneNumber && record.uri.user.characters.count > 4
+        return record.uri.host == domain || record.uri.user.isTelephoneNumber && record.uri.user.count > 4
     }
 }

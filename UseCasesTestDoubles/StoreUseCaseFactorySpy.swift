@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -19,11 +19,11 @@
 import UseCases
 
 public final class StoreUseCaseFactorySpy {
-    fileprivate var check: UseCase!
-    fileprivate var fetch: UseCase!
-    fileprivate var purchase: ThrowingUseCase!
+    private var check: UseCase!
+    private var fetch: UseCase!
+    private var purchase: ThrowingUseCase!
 
-    public fileprivate(set) var invokedIdentifier = ""
+    public private(set) var invokedIdentifier = ""
 
     public init() {}
 

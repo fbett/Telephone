@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -21,9 +21,9 @@ import Domain
 struct SettingsSoundIO {
     private let devices: SystemAudioDevices
     private let settings: KeyValueSettings
-    fileprivate var optionalInput: SystemAudioDevice!
-    fileprivate var optionalOutput: SystemAudioDevice!
-    fileprivate var optionalRingtoneOutput: SystemAudioDevice!
+    private var optionalInput: SystemAudioDevice!
+    private var optionalOutput: SystemAudioDevice!
+    private var optionalRingtoneOutput: SystemAudioDevice!
 
     init(devices: SystemAudioDevices, settings: KeyValueSettings) {
         self.devices = devices

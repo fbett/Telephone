@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 import UseCases
 
 public struct SimpleProductsFake {
-    fileprivate let products: [String: Product] = [
+    private let products: [String: Product] = [
         "123": Product(identifier: "123", name: "product1", price: 100, localizedPrice: "$100"),
         "456": Product(identifier: "456", name: "product2", price: 200, localizedPrice: "$200")
     ]

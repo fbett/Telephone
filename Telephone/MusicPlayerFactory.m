@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -18,17 +18,28 @@
 
 #import "MusicPlayerFactory.h"
 
-#import "AppleMusicPlayer.h"
 #import "iTunes.h"
+#import "iTunesMusicPlayer.h"
+#import "MusicApp.h"
+#import "MusicAppMusicPlayer.h"
 #import "Spotify.h"
 #import "SpotifyMusicPlayer.h"
 
 @implementation MusicPlayerFactory
 
-- (nullable id<MusicPlayer>)makeAppleMusicPlayer {
+- (nullable id<MusicPlayer>)makeiTunesMusicPlayer {
     SBApplication *application = [SBApplication applicationWithBundleIdentifier:@"com.apple.iTunes"];
     if (application) {
-        return [[AppleMusicPlayer alloc] initWithApplication:(iTunesApplication *)application];
+        return [[iTunesMusicPlayer alloc] initWithApplication:(iTunesApplication *)application];
+    } else {
+        return nil;
+    }
+}
+
+- (nullable id<MusicPlayer>)makeMusicAppMusicPlayer {
+    SBApplication *application = [SBApplication applicationWithBundleIdentifier:@"com.apple.Music"];
+    if (application) {
+        return [[MusicAppMusicPlayer alloc] initWithApplication:(MusicAppApplication *)application];
     } else {
         return nil;
     }

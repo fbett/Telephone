@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 import AppKit
 
 final class WorkspaceSleepStatus: NSObject {
-    private(set) var isSleeping = false
+    @objc private(set) var isSleeping = false
 
     private let workspace: NSWorkspace
 
@@ -27,13 +27,13 @@ final class WorkspaceSleepStatus: NSObject {
         self.workspace = workspace
         super.init()
         let nc = workspace.notificationCenter
-        nc.addObserver(self, selector: #selector(willSleep), name: .NSWorkspaceWillSleep, object: workspace)
-        nc.addObserver(self, selector: #selector(didWake), name: .NSWorkspaceDidWake, object: workspace)
+        nc.addObserver(self, selector: #selector(willSleep), name: NSWorkspace.willSleepNotification, object: workspace)
+        nc.addObserver(self, selector: #selector(didWake), name: NSWorkspace.didWakeNotification, object: workspace)
     }
 
     deinit {
-        workspace.notificationCenter.removeObserver(self, name: .NSWorkspaceWillSleep, object: workspace)
-        workspace.notificationCenter.removeObserver(self, name: .NSWorkspaceDidWake, object: workspace)
+        workspace.notificationCenter.removeObserver(self, name: NSWorkspace.willSleepNotification, object: workspace)
+        workspace.notificationCenter.removeObserver(self, name: NSWorkspace.didWakeNotification, object: workspace)
     }
 
     @objc private func willSleep(notification: Notification) {

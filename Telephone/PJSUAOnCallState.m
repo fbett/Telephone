@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -22,28 +22,29 @@
 #import "AKSIPAccount.h"
 #import "AKSIPCall.h"
 #import "AKSIPUserAgent.h"
+#import "PJSUACallInfo.h"
 
 #define THIS_FILE "PJSUAOnCallState.m"
 
 static void LogCallDump(int call_id);
 
 void PJSUAOnCallState(pjsua_call_id callID, pjsip_event *event) {
-    pjsua_call_info callInfo;
-    pjsua_call_get_info(callID, &callInfo);
+    pjsua_call_info info;
+    pjsua_call_get_info(callID, &info);
 
     BOOL mustStartRingback = NO;
     NSNumber *SIPEventCode = nil;
     NSString *SIPEventReason = nil;
 
-    if (callInfo.state == PJSIP_INV_STATE_DISCONNECTED) {
+    if (info.state == PJSIP_INV_STATE_DISCONNECTED) {
         PJ_LOG(3, (THIS_FILE, "Call %d is DISCONNECTED [reason = %d (%s)]",
                    callID,
-                   callInfo.last_status,
-                   callInfo.last_status_text.ptr));
+                   info.last_status,
+                   info.last_status_text.ptr));
         PJ_LOG(5, (THIS_FILE, "Dumping media stats for call %d", callID));
         LogCallDump(callID);
 
-    } else if (callInfo.state == PJSIP_INV_STATE_EARLY) {
+    } else if (info.state == PJSIP_INV_STATE_EARLY) {
         // pj_str_t is a struct with NOT null-terminated string.
         pj_str_t reason;
         pjsip_msg *msg;
@@ -65,35 +66,31 @@ void PJSUAOnCallState(pjsua_call_id callID, pjsip_event *event) {
         SIPEventReason = [NSString stringWithPJString:reason];
 
         // Start ringback for 180 for UAC unless there's SDP in 180.
-        if (callInfo.role == PJSIP_ROLE_UAC &&
+        if (info.role == PJSIP_ROLE_UAC &&
             code == 180 &&
             msg->body == NULL &&
-            callInfo.media_status == PJSUA_CALL_MEDIA_NONE) {
+            info.media[0].status == PJSUA_CALL_MEDIA_NONE) {
             mustStartRingback = YES;
         }
 
         PJ_LOG(3, (THIS_FILE, "Call %d state changed to %s (%d %.*s)",
-                   callID, callInfo.state_text.ptr,
+                   callID, info.state_text.ptr,
                    code, (int)reason.slen, reason.ptr));
     } else {
-        PJ_LOG(3, (THIS_FILE, "Call %d state changed to %s", callID, callInfo.state_text.ptr));
+        PJ_LOG(3, (THIS_FILE, "Call %d state changed to %s", callID, info.state_text.ptr));
     }
 
-    AKSIPCallState state = (AKSIPCallState)callInfo.state;
-    NSInteger accountIdentifier = callInfo.acc_id;
-    NSString *stateText = [NSString stringWithPJString:callInfo.state_text];
-    NSInteger lastStatus = callInfo.last_status;
-    NSString *lastStatusText = [NSString stringWithPJString:callInfo.last_status_text];
-    NSInteger duration = callInfo.connect_duration.sec;
+    PJSUACallInfo *infoWrapper = [[PJSUACallInfo alloc] initWithInfo:info];
+    NSInteger duration = info.connect_duration.sec;
 
     dispatch_async(dispatch_get_main_queue(), ^{
         AKSIPUserAgent *userAgent = [AKSIPUserAgent sharedUserAgent];
         AKSIPCall *call = [userAgent callWithIdentifier:callID];
         if (call == nil) {
-            if (state == kAKSIPCallCallingState) {
-                AKSIPAccount *account = [userAgent accountWithIdentifier:accountIdentifier];
+            if (infoWrapper.state == kAKSIPCallCallingState) {
+                AKSIPAccount *account = [userAgent accountWithIdentifier:infoWrapper.accountIdentifier];
                 if (account != nil) {
-                    call = [account addCallWithIdentifier:callID];
+                    call = [account addCallWithInfo:infoWrapper];
                 } else {
                     PJ_LOG(3, (THIS_FILE,
                                "Did not create AKSIPCall for call %d during call state change. Could not find account",
@@ -109,18 +106,18 @@ void PJSUAOnCallState(pjsua_call_id callID, pjsip_event *event) {
 
         NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
 
-        call.state = state;
-        call.stateText = stateText;
-        call.lastStatus = lastStatus;
-        call.lastStatusText = lastStatusText;
+        call.state = infoWrapper.state;
+        call.stateText = infoWrapper.stateText;
+        call.lastStatus = infoWrapper.lastStatus;
+        call.lastStatusText = infoWrapper.lastStatusText;
         call.duration = duration;
 
-        if (state == kAKSIPCallDisconnectedState) {
+        if (infoWrapper.state == kAKSIPCallDisconnectedState) {
             [userAgent stopRingbackForCall:call];
             [call.account removeCall:call];
             [nc postNotificationName:AKSIPCallDidDisconnectNotification object:call];
 
-        } else if (state == kAKSIPCallEarlyState) {
+        } else if (infoWrapper.state == kAKSIPCallEarlyState) {
             if (mustStartRingback) {
                 [userAgent startRingbackForCall:call];
             }
@@ -133,7 +130,7 @@ void PJSUAOnCallState(pjsua_call_id callID, pjsip_event *event) {
         } else {
             // Incoming call notification is posted from AKIncomingCallReceived().
             NSString *notificationName = nil;
-            switch ((AKSIPCallState)state) {
+            switch (infoWrapper.state) {
                 case kAKSIPCallCallingState:
                     notificationName = AKSIPCallCallingNotification;
                     break;

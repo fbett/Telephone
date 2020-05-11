@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -19,8 +19,8 @@
 import UseCases
 
 final class ProgressiveSettingsMigration: NSObject {
-    fileprivate let settings: KeyValueSettings
-    fileprivate let factory: SettingsMigrationFactory
+    private let settings: KeyValueSettings
+    private let factory: SettingsMigrationFactory
 
     init(settings: KeyValueSettings, factory: SettingsMigrationFactory) {
         self.settings = settings
@@ -29,10 +29,15 @@ final class ProgressiveSettingsMigration: NSObject {
 }
 
 extension ProgressiveSettingsMigration: SettingsMigration {
-    func execute() {
-        if settings.integer(forKey: kSettingsVersion) < 1 {
-            factory.makeAccountUUIDMigration(settings: settings).execute()
+    @objc func execute() {
+        if settings.integer(forKey: kSettingsVersion) == 0 {
+            factory.makeAccountUUIDMigration().execute()
             settings.set(1, forKey: kSettingsVersion)
+        }
+        if settings.integer(forKey: kSettingsVersion) == 1 {
+            factory.makeIPVersionMigration().execute()
+            factory.makeTCPTransportMigration().execute()
+            settings.set(2, forKey: kSettingsVersion)
         }
     }
 }

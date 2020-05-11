@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 #import "PreferencesControllerNotifications.h"
 #import "SoundIOPreferences.h"
 
-@protocol SoundPreferencesViewEventTarget;
+@class SoundPreferencesViewEventTarget;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -43,7 +43,7 @@ enum {
 
 @property(nonatomic, readonly, weak) id<PreferencesControllerDelegate> delegate;
 @property(nonatomic, readonly) AKSIPUserAgent *userAgent;
-@property(nonatomic, readonly) id<SoundPreferencesViewEventTarget> soundPreferencesViewEventTarget;
+@property(nonatomic, readonly) SoundPreferencesViewEventTarget *soundPreferencesViewEventTarget;
 
 // General preferences view controller.
 @property(nonatomic, readonly) GeneralPreferencesViewController *generalPreferencesViewController;
@@ -67,10 +67,13 @@ enum {
 
 - (instancetype)initWithDelegate:(id<PreferencesControllerDelegate>)delegate
                        userAgent:(AKSIPUserAgent *)userAgent
- soundPreferencesViewEventTarget:(id<SoundPreferencesViewEventTarget>)soundPreferencesViewEventTarget;
+ soundPreferencesViewEventTarget:(SoundPreferencesViewEventTarget *)soundPreferencesViewEventTarget;
 
 // Changes window's content view.
 - (IBAction)changeView:(id)sender;
+
+- (void)showWindowCentered;
+- (void)showAccounts;
 
 @end
 

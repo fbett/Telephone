@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -16,10 +16,11 @@
 //  GNU General Public License for more details.
 //
 
+import CommonCrypto
 import Foundation
 
-struct ReceiptChecksum {
-    fileprivate let sha1: Data
+struct ReceiptChecksum: Equatable {
+    private let sha1: Data
 
     init(sha1: Data) {
         self.sha1 = sha1
@@ -34,22 +35,10 @@ struct ReceiptChecksum {
     }
 }
 
-extension ReceiptChecksum: Hashable {
-    var hashValue: Int {
-        return sha1.hashValue
-    }
-}
-
-extension ReceiptChecksum: Equatable {
-    static func ==(lhs: ReceiptChecksum, rhs: ReceiptChecksum) -> Bool {
-        return lhs.sha1 == rhs.sha1
-    }
-}
-
 private func digest(of source: Data) -> Data {
     var result = [UInt8](repeating: 0, count: Int(CC_SHA1_DIGEST_LENGTH))
-    source.withUnsafeBytes { (ptr: UnsafePointer<UInt8>) -> Void in
-        CC_SHA1(ptr, CC_LONG(source.count), &result)
+    source.withUnsafeBytes { ptr in
+        _ = CC_SHA1(ptr.baseAddress, CC_LONG(source.count), &result)
     }
-    return Data(bytes: result)
+    return Data(result)
 }

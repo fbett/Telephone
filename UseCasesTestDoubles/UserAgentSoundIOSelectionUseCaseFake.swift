@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -19,15 +19,15 @@
 import UseCases
 
 public final class UserAgentSoundIOSelectionUseCaseFake {
-    fileprivate let userAgent: UserAgent
+    private let agent: UserAgent
 
-    public init(userAgent: UserAgent) {
-        self.userAgent = userAgent
+    public init(agent: UserAgent) {
+        self.agent = agent
     }
 }
 
 extension UserAgentSoundIOSelectionUseCaseFake: ThrowingUseCase {
     public func execute() throws {
-        try userAgent.selectSoundIODeviceIDs(input: 0, output: 0)
+        try agent.selectSoundIODeviceIDs(input: 0, output: 0)
     }
 }

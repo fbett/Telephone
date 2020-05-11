@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 import Foundation
 
 final class PKCS7ContainerValidation: NSObject {
-    fileprivate let origin: ReceiptValidation
+    private let origin: ReceiptValidation
 
     init(origin: ReceiptValidation) {
         self.origin = origin
@@ -27,7 +27,7 @@ final class PKCS7ContainerValidation: NSObject {
 }
 
 extension PKCS7ContainerValidation: ReceiptValidation {
-    func validateReceipt(_ receipt: Data, completion: (_ result: Result, _ expiration: Date) -> Void) {
+    func validateReceipt(_ receipt: Data, completion: @escaping (_ result: Result, _ expiration: Date) -> Void) {
         if let _ = PKCS7Container(data: receipt) {
             origin.validateReceipt(receipt, completion: completion)
         } else {

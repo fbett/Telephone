@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -17,11 +17,14 @@
 //
 
 final class AvailableMusicPlayers {
-    fileprivate let players: MusicPlayers
+    private let players: MusicPlayers
 
     init(factory: MusicPlayerFactory) {
         var players = [MusicPlayer]()
-        if let p = factory.makeAppleMusicPlayer() {
+        if let p = factory.makeiTunesMusicPlayer() {
+            players.append(p)
+        }
+        if let p = factory.makeMusicAppMusicPlayer() {
             players.append(p)
         }
         if let p = factory.makeSpotifyMusicPlayer() {
@@ -32,11 +35,11 @@ final class AvailableMusicPlayers {
 }
 
 extension AvailableMusicPlayers: MusicPlayer {
-    @objc func pause() {
+    func pause() {
         players.pause()
     }
 
-    @objc func resume() {
+    func resume() {
         players.resume()
     }
 }

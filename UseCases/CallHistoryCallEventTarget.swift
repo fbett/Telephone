@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -17,13 +17,11 @@
 //
 
 public final class CallHistoryCallEventTarget {
-    fileprivate let histories: CallHistories
-    fileprivate let generator: IdentifierGenerator
-    fileprivate let factory: CallHistoryRecordAddUseCaseFactory
+    private let histories: CallHistories
+    private let factory: CallHistoryRecordAddUseCaseFactory
 
-    public init(histories: CallHistories, generator: IdentifierGenerator, factory: CallHistoryRecordAddUseCaseFactory) {
+    public init(histories: CallHistories, factory: CallHistoryRecordAddUseCaseFactory) {
         self.histories = histories
-        self.generator = generator
         self.factory = factory
     }
 }
@@ -32,8 +30,12 @@ extension CallHistoryCallEventTarget: CallEventTarget {
     public func didDisconnect(_ call: Call) {
         factory.make(
             history: histories.history(withUUID: call.account.uuid),
-            record: CallHistoryRecord(identifier: generator.generate(), call: call),
+            record: CallHistoryRecord(call: call),
             domain: call.account.domain
         ).execute()
     }
+
+    public func didMake(_ call: Call) {}
+    public func didReceive(_ call: Call) {}
+    public func isConnecting(_ call: Call) {}
 }

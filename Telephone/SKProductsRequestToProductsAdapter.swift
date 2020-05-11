@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -20,12 +20,12 @@ import StoreKit
 import UseCases
 
 final class SKProductsRequestToProductsAdapter: NSObject {
-    fileprivate var products: [String: Product] = [:]
-    fileprivate var storeKitProducts: [Product: SKProduct] = [:]
-    fileprivate var request: SKProductsRequest?
+    private var products: [String: Product] = [:]
+    private var storeKitProducts: [Product: SKProduct] = [:]
+    private var request: SKProductsRequest?
 
-    fileprivate let expected: ExpectedProducts
-    fileprivate let target: ProductsEventTarget
+    private let expected: ExpectedProducts
+    private let target: ProductsEventTarget
 
     init(expected: ExpectedProducts, target: ProductsEventTarget) {
         self.expected = expected

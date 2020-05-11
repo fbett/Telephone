@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 import UseCases
 
 final class AccountUUIDSettingsMigration {
-    fileprivate let settings: KeyValueSettings
+    private let settings: KeyValueSettings
 
     init(settings: KeyValueSettings) {
         self.settings = settings
@@ -28,21 +28,13 @@ final class AccountUUIDSettingsMigration {
 
 extension AccountUUIDSettingsMigration: SettingsMigration {
     func execute() {
-        save(accounts: loadAccounts().map(addUUIDIfNeeded))
-    }
-
-    private func loadAccounts() -> [[String: Any]] {
-        return settings.array(forKey: kAccounts) as? [[String: Any]] ?? []
-    }
-
-    private func save(accounts: [[String: Any]]) {
-        settings.set(accounts, forKey: kAccounts)
+        settings.save(accounts: settings.loadAccounts().map(addingUUIDIfNeeded))
     }
 }
 
-private func addUUIDIfNeeded(to dict: [String: Any]) -> [String: Any] {
+private func addingUUIDIfNeeded(to dict: [String: Any]) -> [String: Any] {
     if shouldAddUUID(to: dict) {
-        return addUUID(to: dict)
+        return addingUUID(to: dict)
     } else {
         return dict
     }
@@ -56,7 +48,7 @@ private func shouldAddUUID(to dict: [String: Any]) -> Bool {
     }
 }
 
-private func addUUID(to dict: [String: Any]) -> [String: Any] {
+private func addingUUID(to dict: [String: Any]) -> [String: Any] {
     var result = dict
     result[kUUID] = UUID().uuidString
     return result

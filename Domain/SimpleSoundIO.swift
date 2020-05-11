@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -16,10 +16,16 @@
 //  GNU General Public License for more details.
 //
 
-struct SimpleSoundIO: SoundIO {
-    let input: SystemAudioDevice
-    let output: SystemAudioDevice
-    let ringtoneOutput: SystemAudioDevice
+public struct SimpleSoundIO: SoundIO {
+    public let input: SystemAudioDevice
+    public let output: SystemAudioDevice
+    public let ringtoneOutput: SystemAudioDevice
+
+    public init(input: SystemAudioDevice, output: SystemAudioDevice, ringtoneOutput: SystemAudioDevice) {
+        self.input = input
+        self.output = output
+        self.ringtoneOutput = ringtoneOutput
+    }
 }
 
 extension SimpleSoundIO {

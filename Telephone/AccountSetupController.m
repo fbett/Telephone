@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -92,6 +92,11 @@ NSString * const AKAccountSetupControllerDidAddAccountNotification = @"AKAccount
     accountDict[kUseProxy] = @NO;
     accountDict[kProxyHost] = @"";
     accountDict[kProxyPort] = @0;
+    accountDict[kTransport] = kTransportUDP;
+    accountDict[kIPVersion] = kIPVersion4;
+    accountDict[kUpdateContactHeader] = @YES;
+    accountDict[kUpdateViaHeader] = @YES;
+    accountDict[kUpdateSDP] = @YES;
     
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     NSMutableArray *savedAccounts = [NSMutableArray arrayWithArray:[defaults arrayForKey:kAccounts]];

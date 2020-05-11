@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -67,9 +67,6 @@ extern const NSInteger kAKSIPUserAgentInvalidIdentifier;
 // The receiver's delegate.
 @property(nonatomic, weak) id <AKSIPUserAgentDelegate> delegate;
 
-// Accounts added to the receiver.
-@property(nonatomic, readonly, strong) NSMutableArray *accounts;
-
 // A Boolean value indicating whether the receiver has been started.
 @property(nonatomic, readonly, assign, getter=isStarted) BOOL started;
 
@@ -80,17 +77,18 @@ extern const NSInteger kAKSIPUserAgentInvalidIdentifier;
 @property(nonatomic, assign) AKNATType detectedNATType;
 
 // The number of acitve calls controlled by the receiver.
-@property(nonatomic, readonly, assign) NSUInteger activeCallsCount;
+@property(nonatomic, readonly, assign) NSInteger activeCallsCount;
+
+@property(nonatomic, readonly) BOOL hasUnansweredIncomingCalls;
 
 // Receiver's call data.
 @property(nonatomic, readonly, assign) AKSIPUserAgentCallData *callData;
 
-// A pool used by the underlying PJSUA library of the receiver.
-@property(readonly, assign) pj_pool_t *pool;
+@property(nonatomic, assign) NSInteger maxCalls;
 
 // An array of DNS servers to use by the receiver. If set, DNS SRV will be
-// enabled. Only first kAKSIPUserAgentNameserversMax are used.
-@property(nonatomic, copy) NSArray *nameservers;
+// enabled. Only first kAKSIPUserAgentNameServersMax are used.
+@property(nonatomic, copy) NSArray *nameServers;
 
 // SIP proxy host to visit for all outgoing requests. Will be used for all
 // accounts. The final route set for outgoing requests consists of this proxy
@@ -131,16 +129,28 @@ extern const NSInteger kAKSIPUserAgentInvalidIdentifier;
 // Default: NO.
 @property(nonatomic, assign) BOOL usesICE;
 
+/// A Boolean value indicating if QoS is used.
+/// Default: YES.
+@property(nonatomic, assign) BOOL usesQoS;
+
 // Network port to use for SIP transport. Set 0 for any available port.
 // Default: 0.
 @property(nonatomic, assign) NSUInteger transportPort;
 
-// Host name or IP address to advertise as the address of SIP transport.
-@property(nonatomic, copy) NSString *transportPublicHost;
 
 /// A Boolean value indicating if only G.711 codec is used.
 @property(nonatomic, assign) BOOL usesG711Only;
 
+/// A Boolean value indicating if a codec should be locked.
+///
+/// If remote sends SDP answer containing more than one format or codec in
+/// the media line, send re-INVITE or UPDATE with just one codec to lock
+/// which codec to use.
+///
+/// Default: YES.
+@property(nonatomic, assign) BOOL locksCodec;
+
+@property(nonatomic, readonly) dispatch_queue_t poolQueue;
 
 // Returns the shared SIP user agent object.
 + (AKSIPUserAgent *)sharedUserAgent;
@@ -154,6 +164,8 @@ extern const NSInteger kAKSIPUserAgentInvalidIdentifier;
 // Stops user agent.
 - (void)stop;
 - (void)stopAndWait;
+
+- (pj_pool_t *)poolResettingIfNeeded;
 
 // Adds an account to the user agent.
 - (BOOL)addAccount:(AKSIPAccount *)anAccount withPassword:(NSString *)aPassword;

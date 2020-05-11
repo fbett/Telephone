@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -17,12 +17,15 @@
 //
 
 public struct PreferredSoundIO {
-    fileprivate let soundIO: SoundIO
+    private let soundIO: SoundIO
 
-    public init(devices: [SystemAudioDevice]) {
+    public init(devices: [SystemAudioDevice], defaultIO: SystemSoundIO) {
         soundIO = FallingBackSoundIO(
-            origin: SimpleSoundIO(soundIO: FirstBuiltInSystemSoundIO(devices: devices)),
-            fallback: SimpleSoundIO(soundIO: FirstSystemSoundIO(devices: devices))
+            origin: SimpleSoundIO(soundIO: defaultIO),
+            fallback: FallingBackSoundIO(
+                origin: SimpleSoundIO(soundIO: FirstBuiltInSystemSoundIO(devices: devices)),
+                fallback: SimpleSoundIO(soundIO: FirstSystemSoundIO(devices: devices))
+            )
         )
     }
 }

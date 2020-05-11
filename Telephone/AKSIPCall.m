@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -22,13 +22,12 @@
 #import "AKSIPAccount.h"
 #import "AKSIPURI.h"
 #import "AKSIPUserAgent.h"
+#import "PJSUACallInfo.h"
 
 #import "Telephone-Swift.h"
 
 #define THIS_FILE "AKSIPCall.m"
 
-
-const NSInteger kAKSIPCallsMax = 8;
 
 @interface AKSIPCall () {
     URI *_remote;
@@ -152,7 +151,7 @@ const NSInteger kAKSIPCallsMax = 8;
     pjsua_call_info callInfo;
     pjsua_call_get_info((pjsua_call_id)[self identifier], &callInfo);
     
-    return (callInfo.media_status == PJSUA_CALL_MEDIA_LOCAL_HOLD) ? YES : NO;
+    return (callInfo.media[0].status == PJSUA_CALL_MEDIA_LOCAL_HOLD) ? YES : NO;
 }
 
 - (BOOL)isOnRemoteHold {
@@ -163,34 +162,31 @@ const NSInteger kAKSIPCallsMax = 8;
     pjsua_call_info callInfo;
     pjsua_call_get_info((pjsua_call_id)[self identifier], &callInfo);
     
-    return (callInfo.media_status == PJSUA_CALL_MEDIA_REMOTE_HOLD) ? YES : NO;
+    return (callInfo.media[0].status == PJSUA_CALL_MEDIA_REMOTE_HOLD) ? YES : NO;
 }
 
 
 #pragma mark -
 
-- (instancetype)initWithSIPAccount:(AKSIPAccount *)account identifier:(NSInteger)identifier {
+- (instancetype)initWithSIPAccount:(AKSIPAccount *)account info:(PJSUACallInfo *)info {
     self = [super init];
     if (self == nil) {
         return nil;
     }
 
     _account = account;
-    _identifier = identifier;
+    _identifier = info.identifier;
 
     _date = [NSDate date];
 
-    pjsua_call_info call;
-    pj_status_t status = pjsua_call_get_info((pjsua_call_id)identifier, &call);
-    assert(status == PJ_SUCCESS);
-    _incoming = call.role == PJSIP_ROLE_UAS;
+    _incoming = info.isIncoming;
     _missed = _incoming;
-    _state = (AKSIPCallState)call.state;
-    _stateText = [NSString stringWithPJString:call.state_text];
-    _lastStatus = call.last_status;
-    _lastStatusText = [NSString stringWithPJString:call.last_status_text];
-    _localURI = [AKSIPURI SIPURIWithString:[NSString stringWithPJString:call.local_info]];
-    _remoteURI = [AKSIPURI SIPURIWithString:[NSString stringWithPJString:call.remote_info]];
+    _state = info.state;
+    _stateText = info.stateText;
+    _lastStatus = info.lastStatus;
+    _lastStatusText = info.lastStatusText;
+    _localURI = info.localURI;
+    _remoteURI = info.remoteURI;
     _remote = [[URI alloc] initWithURI:_remoteURI];
 
     return self;
@@ -294,7 +290,7 @@ const NSInteger kAKSIPCallsMax = 8;
     pjsua_call_info callInfo;
     pjsua_call_get_info((pjsua_call_id)[self identifier], &callInfo);
     
-    pj_status_t status = pjsua_conf_disconnect(0, callInfo.conf_slot);
+    pj_status_t status = pjsua_conf_disconnect(0, callInfo.media[0].stream.aud.conf_slot);
     if (status == PJ_SUCCESS) {
         [self setMicrophoneMuted:YES];
     } else {
@@ -310,7 +306,7 @@ const NSInteger kAKSIPCallsMax = 8;
     pjsua_call_info callInfo;
     pjsua_call_get_info((pjsua_call_id)[self identifier], &callInfo);
     
-    pj_status_t status = pjsua_conf_connect(0, callInfo.conf_slot);
+    pj_status_t status = pjsua_conf_connect(0, callInfo.media[0].stream.aud.conf_slot);
     if (status == PJ_SUCCESS) {
         [self setMicrophoneMuted:NO];
     } else {

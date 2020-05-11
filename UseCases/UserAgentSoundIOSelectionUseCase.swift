@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -19,17 +19,18 @@
 import Domain
 
 public final class UserAgentSoundIOSelectionUseCase {
-    fileprivate let repository: SystemAudioDeviceRepository
-    fileprivate let userAgent: UserAgent
-    fileprivate let settings: KeyValueSettings
-    fileprivate var devices: SystemAudioDevices!
-    fileprivate var deviceMap: SystemToUserAgentAudioDeviceMap!
-    fileprivate var soundIO: SoundIO!
+    private var devices: SystemAudioDevices!
+    private var deviceMap: SystemToUserAgentAudioDeviceMap!
+    private var soundIO: SoundIO!
 
-    public init(repository: SystemAudioDeviceRepository, userAgent: UserAgent, settings: KeyValueSettings) {
-        self.repository = repository
-        self.userAgent = userAgent
-        self.settings = settings
+    private let devicesFactory: SystemAudioDevicesFactory
+    private let soundIOFactory: SoundIOFactory
+    private let agent: UserAgent
+
+    public init(devicesFactory: SystemAudioDevicesFactory, soundIOFactory: SoundIOFactory, agent: UserAgent) {
+        self.devicesFactory = devicesFactory
+        self.soundIOFactory = soundIOFactory
+        self.agent = agent
     }
 }
 
@@ -37,33 +38,28 @@ extension UserAgentSoundIOSelectionUseCase: ThrowingUseCase {
     public func execute() throws {
         try updateDevices()
         try updateDeviceMap()
-        updateSoundIO()
+        try updateSoundIO()
         try selectUserAgentSoundIO()
     }
 
     private func updateDevices() throws {
-        devices = SystemAudioDevices(devices: try repository.allDevices())
+        devices = try devicesFactory.make()
     }
 
     private func updateDeviceMap() throws {
         deviceMap = SystemToUserAgentAudioDeviceMap(
-            systemDevices: devices.all,
-            userAgentDevices: try userAgent.audioDevices().map(domainAudioDevice)
+            systemDevices: devices.all, userAgentDevices: try agent.audioDevices().map(SimpleUserAgentAudioDevice.init)
         )
     }
 
-    private func updateSoundIO() {
-        soundIO = PreferredSoundIO(devices: devices, settings: settings)
+    private func updateSoundIO() throws {
+        soundIO = try soundIOFactory.make()
     }
 
     private func selectUserAgentSoundIO() throws {
-        try userAgent.selectSoundIODeviceIDs(
+        try agent.selectSoundIODeviceIDs(
             input: deviceMap.userAgentDevice(for: soundIO.input).identifier,
             output: deviceMap.userAgentDevice(for: soundIO.output).identifier
         )
-    }
-
-    private func domainAudioDevice(with device: UserAgentAudioDevice) -> Domain.UserAgentAudioDevice {
-        return Domain.SimpleUserAgentAudioDevice(device: device)
     }
 }

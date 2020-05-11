@@ -3,7 +3,7 @@
 //  Telephone
 //
 //  Copyright © 2008-2016 Alexey Kuznetsov
-//  Copyright © 2016-2017 64 Characters
+//  Copyright © 2016-2020 64 Characters
 //
 //  Telephone is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -17,9 +17,9 @@
 //
 
 public final class DefaultSoundPlaybackUseCase {
-    public fileprivate(set) var sound: Sound?
+    public private(set) var sound: Sound?
 
-    fileprivate let factory: SoundFactory
+    private let factory: SoundFactory
 
     public init(factory: SoundFactory) {
         self.factory = factory

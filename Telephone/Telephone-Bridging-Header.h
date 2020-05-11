@@ -6,6 +6,8 @@
 
 #import "ReceiptValidation-Bridging-Header.h"
 
+#import "AccountController.h"
+#import "AccountControllers.h"
 #import "AppController.h"
 #import "AKABRecord+Querying.h"
 #import "AKSIPAccount.h"
@@ -14,6 +16,7 @@
 #import "AKSIPURI.h"
 #import "AKSIPUserAgent.h"
 #import "MusicPlayerFactory.h"
+#import "NameServers.h"
 #import "PreferencesController.h"
 #import "SoundIOPreferences.h"
 #import "SoundIOPresenterOutput.h"
